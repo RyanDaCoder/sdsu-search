@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Term {
+  id        String   @id @default(cuid())
+  code      String   @unique // e.g. "20251" or "Fall2025" (we'll decide format later)
+  name      String   // e.g. "Fall 2025"
+  startsAt  DateTime?
+  endsAt    DateTime?
+
+  sections  Section[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  subject     String   // e.g. "CS"
+  number      String   // e.g. "210"
+  title       String?
+  units       String?  // keep flexible; SDSU sometimes has ranges
+
+  sections    Section[]
+
+  @@unique([subject, number])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Instructor {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+
+  sections    Section[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Section {
+  id            String   @id @default(cuid())
+
+  termId        String
+  courseId      String
+  instructorId  String?
+
+  classNumber   String?  // SDSU class # / section id if available
+  sectionCode   String?  // e.g. "01", "02", "551" etc
+  modality      String?  // in-person/online/hybrid
+  campus        String?
+  status        String?  // open/closed/waitlist
+  capacity      Int?
+  enrolled      Int?
+  waitlist      Int?
+
+  days          String?  // e.g. "MWF"
+  startTime     String?  // keep string for now to avoid timezone pain
+  endTime       String?
+  location      String?
+
+  term          Term       @relation(fields: [termId], references: [id])
+  course        Course     @relation(fields: [courseId], references: [id])
+  instructor    Instructor? @relation(fields: [instructorId], references: [id])
+
+  @@index([termId])
+  @@index([courseId])
+  @@index([instructorId])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
