@@ -6,74 +6,132 @@ datasource db {
   provider = "postgresql"
 }
 
-model Term {
-  id        String   @id @default(cuid())
-  code      String   @unique // e.g. "20251" or "Fall2025" (we'll decide format later)
-  name      String   // e.g. "Fall 2025"
-  startsAt  DateTime?
-  endsAt    DateTime?
+// Enums so filters are consistent
+enum Modality {
+  IN_PERSON
+  ONLINE_SYNC
+  ONLINE_ASYNC
+  HYBRID
+  UNKNOWN
+}
 
-  sections  Section[]
+enum SectionStatus {
+  OPEN
+  CLOSED
+  WAITLIST
+  UNKNOWN
+}
+
+// Core Models
+model Term {
+  id       String    @id @default(cuid())
+  code     String    @unique // "20251" or "Fall2025" (your choice later)
+  name     String // "Fall 2025"
+  startsAt DateTime?
+  endsAt   DateTime?
+
+  sections Section[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Course {
-  id          String   @id @default(cuid())
-  subject     String   // e.g. "CS"
-  number      String   // e.g. "210"
-  title       String?
-  units       String?  // keep flexible; SDSU sometimes has ranges
+  id      String  @id @default(cuid())
+  subject String // "CS"
+  number  String // "210" or "250A"
+  title   String?
+  units   String? // keep flexible; ranges happen
 
-  sections    Section[]
+  sections Section[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([subject, number])
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Instructor {
-  id          String   @id @default(cuid())
-  name        String
-  email       String?
-
-  sections    Section[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  @@index([subject, number])
+  @@index([title])
 }
 
 model Section {
-  id            String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  termId        String
-  courseId      String
-  instructorId  String?
+  termId   String
+  courseId String
 
-  classNumber   String?  // SDSU class # / section id if available
-  sectionCode   String?  // e.g. "01", "02", "551" etc
-  modality      String?  // in-person/online/hybrid
-  campus        String?
-  status        String?  // open/closed/waitlist
-  capacity      Int?
-  enrolled      Int?
-  waitlist      Int?
+  classNumber String? // SDSU class #
+  sectionCode String? // "01", "02", etc
 
-  days          String?  // e.g. "MWF"
-  startTime     String?  // keep string for now to avoid timezone pain
-  endTime       String?
-  location      String?
+  modality Modality      @default(UNKNOWN)
+  status   SectionStatus @default(UNKNOWN)
+  campus   String?
 
-  term          Term       @relation(fields: [termId], references: [id])
-  course        Course     @relation(fields: [courseId], references: [id])
-  instructor    Instructor? @relation(fields: [instructorId], references: [id])
+  capacity Int?
+  enrolled Int?
+  waitlist Int?
 
+  // Relations
+  meetings    Meeting[]
+  instructors SectionInstructor[]
+
+  term   Term   @relation(fields: [termId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([termId, classNumber])
   @@index([termId])
   @@index([courseId])
-  @@index([instructorId])
+  @@index([termId, modality])
+  @@index([termId, status])
+}
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+// Meetings = where day/time/location live
+model Meeting {
+  id String @id @default(cuid())
+
+  sectionId String
+
+  days     String? // "MWF", "TR", "TBA"
+  startMin Int? // minutes from midnight (9:00 AM -> 540)
+  endMin   Int?
+
+  building String?
+  room     String?
+  location String? // optional combined location
+
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([sectionId])
+  @@index([days])
+  @@index([startMin, endMin])
+}
+
+model Instructor {
+  id    String  @id @default(cuid())
+  name  String
+  email String?
+
+  sections SectionInstructor[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name])
+  @@index([name])
+}
+
+// Join table so a Section can have multiple instructors
+model SectionInstructor {
+  sectionId    String
+  instructorId String
+
+  section    Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@id([sectionId, instructorId])
+  @@index([instructorId])
 }
