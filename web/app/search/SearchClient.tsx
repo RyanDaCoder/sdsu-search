@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SchedulePanel } from "@/components/schedule/SchedulePanel";
 
 import type { SearchFilters, SearchResponse } from "@/lib/search/types";
 import {
@@ -60,11 +61,9 @@ export default function SearchClient() {
     keepPreviousData: true,
     dedupingInterval: 1500,
   });
-  console.log("DBG FilterSidebar:", FilterSidebar, typeof FilterSidebar);
-  console.log("DBG ResultsList:", ResultsList, typeof ResultsList);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_420px] gap-6">
       <FilterSidebar filters={filters} setFilters={setFilters} />
 
       <div>
@@ -97,6 +96,8 @@ export default function SearchClient() {
           )}
         </div>
       </div>
+
+      <SchedulePanel />
     </div>
   );
 }

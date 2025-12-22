@@ -3,9 +3,12 @@
 import { useMemo, useState } from "react";
 import type { SearchCourse } from "@/lib/search/types";
 import { minToTimeLabel } from "@/lib/search/time";
+import { useScheduleStore } from "@/lib/schedule/store";
 
 export default function CourseCard({ course }: { course: SearchCourse }) {
   const [open, setOpen] = useState(false);
+  const addSection = useScheduleStore((s) => s.addSection);
+  const hasSection = useScheduleStore((s) => s.hasSection);
 
   const header = useMemo(() => {
     const code = `${course.subject} ${course.number}`;
@@ -33,52 +36,72 @@ export default function CourseCard({ course }: { course: SearchCourse }) {
 
       {open && (
         <div className="mt-4 space-y-3">
-          {course.sections.map((s) => (
-            <div key={s.id} className="rounded border p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-medium">
-                  Section {s.sectionCode ?? "?"}
-                  <span className="opacity-60 font-normal">
-                    {" "}· {s.modality ?? "UNKNOWN"} · {s.status ?? "UNKNOWN"}
-                  </span>
+          {course.sections.map((s) => {
+            const added = hasSection(s.id);
+
+            return (
+              <div key={s.id} className="rounded border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-medium">
+                    Section {s.sectionCode ?? "?"}
+                    <span className="opacity-60 font-normal">
+                      {" "}
+                      · {s.modality ?? "UNKNOWN"} · {s.status ?? "UNKNOWN"}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="rounded border px-3 py-1 text-sm hover:bg-black/5 disabled:opacity-50 disabled:hover:bg-transparent"
+                    disabled={added}
+                    onClick={() => {
+                      const courseCode = `${course.subject} ${course.number}`;
+
+                      const result = addSection({
+                        sectionId: s.id,
+                        courseCode,
+                        courseTitle: course.title,
+                        termCode: s.term?.code ?? null,
+                        meetings: s.meetings ?? [],
+                        section: s,
+                      });
+
+                      if (!result.ok) alert(result.message);
+                    }}
+                  >
+                    {added ? "Added" : "Add to Schedule"}
+                  </button>
                 </div>
 
-                <button
-                  className="rounded border px-3 py-1 text-sm hover:bg-black/5"
-                  onClick={() => alert("Add to Schedule (Milestone C) - wiring next.")}
-                >
-                  Add to Schedule
-                </button>
-              </div>
+                <div className="mt-2 text-sm">
+                  <div className="opacity-70">
+                    Term: {s.term.name} ({s.term.code})
+                  </div>
 
-              <div className="mt-2 text-sm">
-                <div className="opacity-70">
-                  Term: {s.term.name} ({s.term.code})
-                </div>
+                  <div className="mt-2">
+                    <div className="text-xs opacity-60">Meetings</div>
+                    <div className="mt-1 space-y-1">
+                      {s.meetings.map((m) => (
+                        <div key={m.id} className="text-sm">
+                          {m.days} {minToTimeLabel(m.startMin)}–{minToTimeLabel(m.endMin)}
+                          {m.location ? <span className="opacity-60"> · {m.location}</span> : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-                <div className="mt-2">
-                  <div className="text-xs opacity-60">Meetings</div>
-                  <div className="mt-1 space-y-1">
-                    {s.meetings.map((m) => (
-                      <div key={m.id} className="text-sm">
-                        {m.days} {minToTimeLabel(m.startMin)}–{minToTimeLabel(m.endMin)}
-                        {m.location ? <span className="opacity-60"> · {m.location}</span> : null}
-                      </div>
-                    ))}
+                  <div className="mt-2">
+                    <div className="text-xs opacity-60">Instructors</div>
+                    <div className="mt-1 text-sm">
+                      {s.instructors.length
+                        ? s.instructors.map((x) => x.instructor.name).join(", ")
+                        : "TBA"}
+                    </div>
                   </div>
                 </div>
-
-                <div className="mt-2">
-                  <div className="text-xs opacity-60">Instructors</div>
-                  <div className="mt-1 text-sm">
-                    {s.instructors.length
-                      ? s.instructors.map((x) => x.instructor.name).join(", ")
-                      : "TBA"}
-                  </div>
-                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
