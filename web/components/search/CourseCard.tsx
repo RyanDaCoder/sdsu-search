@@ -66,7 +66,8 @@ export default function CourseCard({ course }: { course: SearchCourse }) {
                         section: s,
                       });
 
-                      if (!result.ok) alert(result.message);
+                      if (!result.ok) return;
+
                     }}
                   >
                     {added ? "Added" : "Add to Schedule"}
