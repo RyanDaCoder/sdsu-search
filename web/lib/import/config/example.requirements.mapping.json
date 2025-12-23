@@ -1,0 +1,8 @@
+{
+  "columns": {
+    "subject": ["SUBJECT", "Subject", "subj"],
+    "number": ["COURSE", "Course", "catalog_nbr"],
+    "requirementCode": ["REQUIREMENT", "Requirement", "ge"]
+  }
+}
+

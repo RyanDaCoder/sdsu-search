@@ -1,0 +1,36 @@
+{
+  "columns": {
+    "termCode": ["TERM", "Term", "term_code"],
+    "subject": ["SUBJ", "Subject", "subject"],
+    "number": ["CATALOG_NBR", "Course", "course_number"],
+    "sectionKey": ["CLASS_NBR", "CRN", "Section", "section"],
+    "title": ["TITLE", "Course Title"],
+    "units": ["UNITS", "Units"],
+    "status": ["STATUS", "Enrollment Status"],
+    "modality": ["MODALITY", "Instruction Mode"],
+    "instructor": ["INSTRUCTOR", "Instructor"],
+    "location": ["ROOM", "Location"]
+  },
+  "meetingMode": "single",
+  "singleMeeting": {
+    "days": ["DAYS", "Days"],
+    "startTime": ["START", "Start Time"],
+    "endTime": ["END", "End Time"],
+    "meetingLocation": ["ROOM", "Meeting Location"]
+  },
+  "valueMaps": {
+    "modality": {
+      "Face-to-Face": "IN_PERSON",
+      "In Person": "IN_PERSON",
+      "Online": "ONLINE_ASYNC",
+      "Online Synchronous": "ONLINE_SYNC",
+      "Hybrid": "HYBRID"
+    },
+    "status": {
+      "Open": "OPEN",
+      "Closed": "CLOSED",
+      "Waitlist": "WAITLIST"
+    }
+  }
+}
+
