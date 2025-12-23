@@ -18,6 +18,9 @@ export function parseFiltersFromSearchParams(sp: URLSearchParams): SearchFilters
   if (daysAll.length) daysAll.forEach(pushIfValid);
   else if (daysOne) pushIfValid(daysOne);
 
+  // Parse multiple GE params
+  const ge = sp.getAll("ge").filter(Boolean);
+
   return {
     term: sp.get("term") ?? "20251",
     q: sp.get("q") ?? undefined,
@@ -28,6 +31,7 @@ export function parseFiltersFromSearchParams(sp: URLSearchParams): SearchFilters
     days: days.length ? days : undefined,
     timeStart: toInt(sp.get("timeStart")),
     timeEnd: toInt(sp.get("timeEnd")),
+    ge: ge.length > 0 ? ge : undefined,
   };
 }
 
@@ -47,6 +51,13 @@ export function buildSearchParamsFromFilters(filters: SearchFilters): URLSearchP
 
   if (typeof filters.timeStart === "number") sp.set("timeStart", String(filters.timeStart));
   if (typeof filters.timeEnd === "number") sp.set("timeEnd", String(filters.timeEnd));
+
+  // Add multiple GE params
+  if (filters.ge && filters.ge.length > 0) {
+    filters.ge.forEach((geCode) => {
+      sp.append("ge", geCode);
+    });
+  }
 
   return sp;
 }

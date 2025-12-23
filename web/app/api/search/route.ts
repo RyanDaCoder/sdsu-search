@@ -46,6 +46,9 @@ export async function GET(req: Request) {
 
   const instructor = (searchParams.get("instructor") ?? "").trim();
 
+  // GE filter: parse multiple ?ge=GE-IIB&ge=GE-IVC params
+  const geCodes = searchParams.getAll("ge").filter(Boolean).map((g) => g.trim());
+
   // meeting filter
   const meetingWhere: any = {};
   const daysWhere = days ? buildDaysWhere(days) : undefined;
@@ -76,15 +79,47 @@ export async function GET(req: Request) {
   }
 
   const courseWhere: any = {};
+  
+  // Subject and number filters (AND)
   if (subject) courseWhere.subject = subject;
   if (number) courseWhere.number = { startsWith: number };
 
+  // GE filter: course matches if ANY selected GE code matches (OR logic via 'in')
+  if (geCodes.length > 0) {
+    courseWhere.requirements = {
+      some: {
+        requirement: {
+          code: { in: geCodes },
+        },
+      },
+    };
+  }
+
+  // Q filter: title OR subject OR number (OR internally, ANDed with other filters)
   if (q) {
-    courseWhere.OR = [
+    const qConditions = [
       { title: { contains: q, mode: "insensitive" } },
       { subject: { contains: q.toUpperCase() } },
       { number: { contains: q } },
     ];
+    
+    // If we have other filters, combine with AND
+    if (subject || number || geCodes.length > 0) {
+      const otherConditions: any = {};
+      if (subject) otherConditions.subject = subject;
+      if (number) otherConditions.number = { startsWith: number };
+      if (geCodes.length > 0) {
+        otherConditions.requirements = courseWhere.requirements;
+      }
+      courseWhere.AND = [{ OR: qConditions }, otherConditions];
+      // Clear individual fields
+      delete courseWhere.subject;
+      delete courseWhere.number;
+      delete courseWhere.requirements;
+    } else {
+      // Only q filter
+      courseWhere.OR = qConditions;
+    }
   }
 
   // Find courses that have at least one section that matches filters
@@ -103,13 +138,27 @@ export async function GET(req: Request) {
         },
         orderBy: [{ sectionCode: "asc" }],
       },
+      requirements: {
+        include: {
+          requirement: true,
+        },
+      },
     },
     orderBy: [{ subject: "asc" }, { number: "asc" }],
     take: 50,
   });
 
+  // Transform results to include geCodes from requirements
+  const transformedResults = results.map((course) => {
+    const { requirements, ...courseData } = course;
+    return {
+      ...courseData,
+      geCodes: requirements.map((cr) => cr.requirement.code),
+    };
+  });
+
   return NextResponse.json({
-    count: results.length,
-    results,
+    count: transformedResults.length,
+    results: transformedResults,
   });
 }

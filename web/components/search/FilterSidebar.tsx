@@ -10,6 +10,33 @@ function toggleDay(days: DaysKey[] | undefined, day: DaysKey): DaysKey[] {
   return Array.from(set);
 }
 
+function toggleGe(geCodes: string[] | undefined, geCode: string): string[] {
+  const set = new Set(geCodes ?? []);
+  if (set.has(geCode)) set.delete(geCode);
+  else set.add(geCode);
+  return Array.from(set);
+}
+
+// SDSU-like GE codes (matching seed data)
+const GE_CODES = [
+  "GE-I-ORAL",
+  "GE-I-WRITTEN",
+  "GE-I-CRIT",
+  "GE-IIA-PHYS",
+  "GE-IIA-LIFE",
+  "GE-IIA-LAB",
+  "GE-IIA-MATH",
+  "GE-IIB",
+  "GE-IIC-ARTS",
+  "GE-IIC-HUM",
+  "GE-III",
+  "GE-IVA",
+  "GE-IVB",
+  "GE-IVC",
+  "GE-IV-CULTDIV",
+  "GE-V-ETHNIC",
+];
+
 export default function FilterSidebar({
   filters,
   setFilters,
@@ -150,6 +177,39 @@ export default function FilterSidebar({
           value={filters.instructor ?? ""}
           onChange={(e) => setFilters({ ...filters, instructor: e.target.value || undefined })}
         />
+      </div>
+
+      {/* GE / Requirements */}
+      <div className="mt-4">
+        <div className="flex items-center justify-between">
+          <div className="text-sm opacity-70">GE / Requirements</div>
+          {(filters.ge ?? []).length > 0 && (
+            <button
+              type="button"
+              onClick={() => setFilters({ ...filters, ge: undefined })}
+              className="text-xs text-blue-600 hover:text-blue-800 underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="mt-2 space-y-2 text-sm max-h-64 overflow-y-auto">
+          {GE_CODES.map((geCode) => (
+            <label key={geCode} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={(filters.ge ?? []).includes(geCode)}
+                onChange={() =>
+                  setFilters({ ...filters, ge: toggleGe(filters.ge, geCode) })
+                }
+              />
+              {geCode}
+            </label>
+          ))}
+        </div>
+        <div className="text-xs opacity-60 mt-2">
+          Select multiple to find courses matching ANY selected requirement.
+        </div>
       </div>
     </aside>
   );

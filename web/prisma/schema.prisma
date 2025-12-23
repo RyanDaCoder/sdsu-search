@@ -43,7 +43,8 @@ model Course {
   title   String?
   units   String? // keep flexible; ranges happen
 
-  sections Section[]
+  sections     Section[]
+  requirements CourseRequirement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -134,4 +135,31 @@ model SectionInstructor {
 
   @@id([sectionId, instructorId])
   @@index([instructorId])
+}
+
+// GE / Requirements
+model Requirement {
+  id          String  @id @default(cuid())
+  code        String  @unique // "GE-IIB", "GE-IVC", etc.
+  name        String?
+  description String?
+
+  courses CourseRequirement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+}
+
+// Join table for Course <-> Requirement many-to-many
+model CourseRequirement {
+  courseId      String
+  requirementId String
+
+  course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, requirementId])
+  @@index([requirementId])
 }

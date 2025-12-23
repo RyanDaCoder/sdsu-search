@@ -10,6 +10,7 @@ export type SearchFilters = {
   timeEnd?: number;
   modality?: string;
   instructor?: string;
+  ge?: string[];
 };
 
 export type ApiMeeting = {
@@ -52,6 +53,7 @@ export type SearchCourse = {
   number: string;
   title?: string | null;
   units?: string | null;
+  geCodes: string[];
   sections: ApiSection[];
 };
 
