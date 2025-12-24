@@ -2,6 +2,7 @@
 
 import type { SearchCourse } from "@/lib/search/types";
 import CourseCard from "./CourseCard";
+import CourseCardSkeleton from "./CourseCardSkeleton";
 
 export default function ResultsList({
   isLoading,
@@ -10,13 +11,13 @@ export default function ResultsList({
   isLoading: boolean;
   results: SearchCourse[];
 }) {
+  // Show skeleton loaders when loading and no previous results
   if (isLoading && results.length === 0) {
     return (
-      <div className="rounded-lg border border-[#E5E5E5] bg-white p-8 text-center shadow-sm">
-        <div className="inline-flex items-center gap-3 text-[#404040]">
-          <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#8B1538] border-t-transparent"></span>
-          <span className="text-sm font-medium">Loading courses…</span>
-        </div>
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <CourseCardSkeleton key={`skeleton-${i}`} />
+        ))}
       </div>
     );
   }
@@ -37,6 +38,13 @@ export default function ResultsList({
       {results.map((course) => (
         <CourseCard key={course.id} course={course} />
       ))}
+      {/* Show skeleton loaders at the end when loading with existing results (pagination) */}
+      {isLoading && (
+        <>
+          <CourseCardSkeleton />
+          <CourseCardSkeleton />
+        </>
+      )}
     </div>
   );
 }
