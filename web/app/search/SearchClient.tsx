@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SchedulePanel } from "@/components/schedule/SchedulePanel";
 
@@ -28,6 +28,7 @@ const fetcher = async (url: string) => {
 export default function SearchClient() {
   const router = useRouter();
   const sp = useSearchParams();
+  const keywordInputRef = useRef<HTMLInputElement | null>(null);
 
   const initialFilters = useMemo<SearchFilters>(() => {
     const usp = new URLSearchParams(sp.toString());
@@ -98,15 +99,49 @@ export default function SearchClient() {
     dedupingInterval: 1500,
   });
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in inputs, textareas, or when modifier keys are pressed
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey
+      ) {
+        return;
+      }
+
+      // "/" to focus keyword search
+      if (e.key === "/") {
+        e.preventDefault();
+        keywordInputRef.current?.focus();
+      }
+
+      // "?" to show keyboard shortcuts help (future enhancement)
+      // Esc to close mobile filters
+      if (e.key === "Escape" && mobileFiltersOpen) {
+        setMobileFiltersOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileFiltersOpen]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_420px] gap-4 lg:gap-6">
       {/* Mobile filter button */}
       <div className="lg:hidden">
         <button
           onClick={() => setMobileFiltersOpen(true)}
-          className="w-full rounded-md border border-[#D4D4D4] bg-white px-4 py-3 text-sm font-medium text-[#8B1538] hover:bg-[#8B1538] hover:text-white hover:border-[#8B1538] transition-colors flex items-center justify-center gap-2"
+          className="w-full rounded-md border border-[#D4D4D4] bg-white px-4 py-3 text-sm font-medium text-[#8B1538] hover:bg-[#8B1538] hover:text-white hover:border-[#8B1538] transition-colors flex items-center justify-center gap-2 touch-manipulation"
+          aria-label="Open filters"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
           Filters
@@ -115,7 +150,7 @@ export default function SearchClient() {
 
       {/* Filter Sidebar - Desktop visible, Mobile as drawer */}
       <div className="hidden lg:block">
-        <FilterSidebar filters={filters} setFilters={setFilters} />
+        <FilterSidebar filters={filters} setFilters={setFilters} keywordInputRef={keywordInputRef} />
       </div>
 
       {/* Mobile Filter Drawer */}
@@ -124,22 +159,28 @@ export default function SearchClient() {
           <div
             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
             onClick={() => setMobileFiltersOpen(false)}
+            aria-hidden="true"
           />
-          <div className="fixed inset-y-0 left-0 w-[85vw] max-w-sm bg-white shadow-xl z-50 lg:hidden overflow-y-auto">
+          <div
+            className="fixed inset-y-0 left-0 w-[85vw] max-w-sm bg-white shadow-xl z-50 lg:hidden overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="filter-drawer-title"
+          >
             <div className="sticky top-0 bg-white border-b border-[#E5E5E5] p-4 flex items-center justify-between z-10">
-              <h2 className="font-semibold text-lg text-[#2C2C2C]">Filters</h2>
+              <h2 id="filter-drawer-title" className="font-semibold text-lg text-[#2C2C2C]">Filters</h2>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="text-[#737373] hover:text-[#2C2C2C] transition-colors p-1"
+                className="text-[#737373] hover:text-[#2C2C2C] transition-colors p-1 touch-manipulation"
                 aria-label="Close filters"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
             <div className="p-4">
-              <FilterSidebar filters={filters} setFilters={setFilters} onClose={() => setMobileFiltersOpen(false)} />
+              <FilterSidebar filters={filters} setFilters={setFilters} onClose={() => setMobileFiltersOpen(false)} keywordInputRef={keywordInputRef} />
             </div>
           </div>
         </>

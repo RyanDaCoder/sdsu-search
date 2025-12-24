@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { useEffect, useRef } from "react";
 import type { SearchCourse } from "@/lib/search/types";
 import { minToTimeLabel } from "@/lib/search/time";
 
@@ -11,29 +11,90 @@ type CourseDetailsModalProps = {
 };
 
 export default function CourseDetailsModal({ course, isOpen, onClose }: CourseDetailsModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  // Focus management and keyboard handling
+  useEffect(() => {
+    if (!isOpen || !course) return;
+
+    // Store the previously focused element
+    previousActiveElement.current = document.activeElement as HTMLElement;
+
+    // Focus the close button when modal opens
+    closeButtonRef.current?.focus();
+
+    // Handle Esc key
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+
+      // Trap focus within modal
+      if (e.key === "Tab" && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          // Shift + Tab
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement?.focus();
+          }
+        } else {
+          // Tab
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement?.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    // Restore focus when modal closes
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previousActiveElement.current?.focus();
+    };
+  }, [isOpen, course, onClose]);
+
   if (!isOpen || !course) return null;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="course-details-title"
+      aria-describedby="course-details-description"
     >
       <div
+        ref={modalRef}
         className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-2xl m-4 border border-[#E5E5E5]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-[#E5E5E5] p-5 flex items-start justify-between z-10">
           <div>
-            <h2 className="text-2xl font-semibold text-[#2C2C2C]">
+            <h2 id="course-details-title" className="text-2xl font-semibold text-[#2C2C2C]">
               {course.subject} {course.number}
             </h2>
-            <p className="text-sm text-[#525252] mt-1.5">{course.title ?? "(Untitled)"}</p>
+            <p id="course-details-description" className="text-sm text-[#525252] mt-1.5">
+              {course.title ?? "(Untitled)"}
+            </p>
           </div>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
-            className="text-2xl leading-none text-[#737373] hover:text-[#2C2C2C] transition-colors p-1"
-            aria-label="Close"
+            className="text-2xl leading-none text-[#737373] hover:text-[#2C2C2C] transition-colors p-1 touch-manipulation"
+            aria-label="Close course details"
           >
             ×
           </button>
