@@ -145,16 +145,82 @@ function CourseCard({ course }: { course: SearchCourse }) {
   );
 }
 
+// Helper function to compare sections deeply
+function sectionsEqual(prev: SearchCourse["sections"], next: SearchCourse["sections"]): boolean {
+  if (prev.length !== next.length) return false;
+  
+  // Create maps by section ID for efficient lookup (handles reordering)
+  const prevMap = new Map(prev.map(s => [s.id, s]));
+  const nextMap = new Map(next.map(s => [s.id, s]));
+  
+  // Check all sections exist in both
+  if (prevMap.size !== nextMap.size) return false;
+  
+  for (const [sectionId, prevSection] of prevMap) {
+    const nextSection = nextMap.get(sectionId);
+    if (!nextSection) return false;
+    
+    // Compare section properties that are displayed or used in CourseCard
+    if (
+      prevSection.sectionCode !== nextSection.sectionCode ||
+      prevSection.modality !== nextSection.modality ||
+      prevSection.status !== nextSection.status ||
+      prevSection.term?.code !== nextSection.term?.code ||
+      prevSection.term?.name !== nextSection.term?.name
+    ) {
+      return false;
+    }
+    
+    // Compare meetings (by ID, handles reordering)
+    if (prevSection.meetings.length !== nextSection.meetings.length) return false;
+    const prevMeetingsMap = new Map(prevSection.meetings.map(m => [m.id, m]));
+    const nextMeetingsMap = new Map(nextSection.meetings.map(m => [m.id, m]));
+    for (const [meetingId, prevMeeting] of prevMeetingsMap) {
+      const nextMeeting = nextMeetingsMap.get(meetingId);
+      if (!nextMeeting) return false;
+      if (
+        prevMeeting.days !== nextMeeting.days ||
+        prevMeeting.startMin !== nextMeeting.startMin ||
+        prevMeeting.endMin !== nextMeeting.endMin ||
+        prevMeeting.location !== nextMeeting.location
+      ) {
+        return false;
+      }
+    }
+    
+    // Compare instructors (by ID, handles reordering)
+    if (prevSection.instructors.length !== nextSection.instructors.length) return false;
+    const prevInstMap = new Map(prevSection.instructors.map(i => [i.id, i]));
+    const nextInstMap = new Map(nextSection.instructors.map(i => [i.id, i]));
+    for (const [instId, prevInst] of prevInstMap) {
+      const nextInst = nextInstMap.get(instId);
+      if (!nextInst) return false;
+      if (
+        prevInst.instructor.id !== nextInst.instructor.id ||
+        prevInst.instructor.name !== nextInst.instructor.name
+      ) {
+        return false;
+      }
+    }
+  }
+  
+  return true;
+}
+
 // Memoize to prevent unnecessary re-renders when parent updates
 export default memo(CourseCard, (prevProps, nextProps) => {
   // Only re-render if course data actually changed
-  return (
+  const courseEqual =
     prevProps.course.id === nextProps.course.id &&
     prevProps.course.subject === nextProps.course.subject &&
     prevProps.course.number === nextProps.course.number &&
     prevProps.course.title === nextProps.course.title &&
     prevProps.course.units === nextProps.course.units &&
-    prevProps.course.sections.length === nextProps.course.sections.length &&
-    JSON.stringify(prevProps.course.geCodes) === JSON.stringify(nextProps.course.geCodes)
-  );
+    JSON.stringify(prevProps.course.geCodes) === JSON.stringify(nextProps.course.geCodes);
+  
+  // Deep compare sections to catch changes in section properties
+  const sectionsEqualResult = sectionsEqual(prevProps.course.sections, nextProps.course.sections);
+  
+  // Return true if props are equal (skip re-render), false if different (re-render)
+  return courseEqual && sectionsEqualResult;
 });

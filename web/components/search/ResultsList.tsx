@@ -50,14 +50,53 @@ function ResultsList({
   );
 }
 
+// Helper function to compare courses deeply
+function coursesEqual(prev: SearchCourse[], next: SearchCourse[]): boolean {
+  if (prev.length !== next.length) return false;
+  
+  // Create maps by course ID for efficient lookup (handles reordering)
+  const prevMap = new Map(prev.map(c => [c.id, c]));
+  const nextMap = new Map(next.map(c => [c.id, c]));
+  
+  // Check all courses exist in both
+  if (prevMap.size !== nextMap.size) return false;
+  
+  for (const [courseId, prevCourse] of prevMap) {
+    const nextCourse = nextMap.get(courseId);
+    if (!nextCourse) return false;
+    
+    // Compare all course properties that could change
+    if (
+      prevCourse.subject !== nextCourse.subject ||
+      prevCourse.number !== nextCourse.number ||
+      prevCourse.title !== nextCourse.title ||
+      prevCourse.units !== nextCourse.units ||
+      JSON.stringify(prevCourse.geCodes) !== JSON.stringify(nextCourse.geCodes) ||
+      prevCourse.sections.length !== nextCourse.sections.length
+    ) {
+      return false;
+    }
+    
+    // Compare section IDs (sections could be reordered, so compare as sets)
+    const prevSectionIds = new Set(prevCourse.sections.map(s => s.id));
+    const nextSectionIds = new Set(nextCourse.sections.map(s => s.id));
+    if (prevSectionIds.size !== nextSectionIds.size) return false;
+    for (const id of prevSectionIds) {
+      if (!nextSectionIds.has(id)) return false;
+    }
+  }
+  
+  return true;
+}
+
 // Memoize to prevent re-renders when parent state changes but results are the same
 export default memo(ResultsList, (prevProps, nextProps) => {
   // Only re-render if loading state or results actually changed
   if (prevProps.isLoading !== nextProps.isLoading) return false;
-  if (prevProps.results.length !== nextProps.results.length) return false;
   
-  // Check if any course IDs changed
-  const prevIds = prevProps.results.map(r => r.id).join(',');
-  const nextIds = nextProps.results.map(r => r.id).join(',');
-  return prevIds === nextIds;
+  // Deep compare course data, not just IDs
+  const coursesEqualResult = coursesEqual(prevProps.results, nextProps.results);
+  
+  // Return true if props are equal (skip re-render), false if different (re-render)
+  return coursesEqualResult;
 });

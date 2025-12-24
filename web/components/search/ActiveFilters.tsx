@@ -46,10 +46,15 @@ export default function ActiveFilters({ filters, setFilters }: ActiveFiltersProp
 
   // Days
   if (filters.days && filters.days.length > 0) {
+    const dayLabels: Record<string, string> = {
+      MWF: "Mon/Wed/Fri",
+      TT: "Tue/Thu",
+    };
+    
     filters.days.forEach((day) => {
       activeFilters.push({
         id: `days-${day}`,
-        label: `Days: ${day}`,
+        label: `Days: ${dayLabels[day] || day}`,
         onRemove: () => {
           const newDays = filters.days?.filter((d) => d !== day);
           setFilters({ ...filters, days: newDays && newDays.length > 0 ? newDays : undefined });

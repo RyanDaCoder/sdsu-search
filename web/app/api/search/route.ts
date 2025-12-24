@@ -11,15 +11,25 @@ function parseIntOrNull(v: string | null) {
   return Number.isFinite(n) ? n : null;
 }
 
-// days filter helper: "MWF" should match meeting.days containing M/W/F
+// days filter helper: 
+// - Single day (M, T, W, R, F): exact match only (e.g., "M" matches only "M", not "MWF")
+// - Combinations (MW, TR, MWF, etc.): contains all selected days (e.g., "MWF" matches "MWF" or "MWFR")
 function buildDaysWhere(days: string) {
   // normalize like "mwf" -> "MWF"
-  const letters = days.toUpperCase().replace(/[^MTWRFS]/g, "");
-  if (!letters) return undefined;
+  const normalized = days.toUpperCase().replace(/[^MTWRFS]/g, "");
+  if (!normalized) return undefined;
 
-  // require meeting.days contains every selected day
+  // Single letter = exact match (e.g., "M" should only match "M", not "MWF")
+  if (normalized.length === 1) {
+    return {
+      days: normalized,
+    };
+  }
+
+  // Multiple letters = contains all selected days (e.g., "MWF" matches meetings with M AND W AND F)
+  const letters = normalized.split("");
   return {
-    AND: letters.split("").map((d) => ({
+    AND: letters.map((d) => ({
       days: { contains: d },
     })),
   };
@@ -40,7 +50,9 @@ export async function GET(req: Request) {
       ? (modalityRaw as Modality)
       : null;
 
-  const days = (searchParams.get("days") ?? "").trim(); // e.g. "MWF" or "TR"
+  // Support multiple day filters: ?days=M&days=W or ?days=MWF
+  const daysParams = searchParams.getAll("days").filter(Boolean);
+  const days = daysParams.length > 0 ? daysParams : (searchParams.get("days") ? [searchParams.get("days")!] : []);
   const timeStart = parseIntOrNull(searchParams.get("timeStart")); // minutes
   const timeEnd = parseIntOrNull(searchParams.get("timeEnd")); // minutes
 
@@ -56,8 +68,22 @@ export async function GET(req: Request) {
 
   // meeting filter
   const meetingWhere: any = {};
-  const daysWhere = days ? buildDaysWhere(days) : undefined;
-  if (daysWhere) Object.assign(meetingWhere, daysWhere);
+  
+  // Handle multiple day filters with OR logic
+  if (days.length > 0) {
+    const daysWheres = days
+      .map((d) => buildDaysWhere(d))
+      .filter((dw): dw is NonNullable<typeof dw> => dw !== undefined);
+    
+    if (daysWheres.length > 0) {
+      // If multiple day filters, use OR logic (match if meeting matches ANY selected day filter)
+      if (daysWheres.length === 1) {
+        Object.assign(meetingWhere, daysWheres[0]);
+      } else {
+        meetingWhere.OR = daysWheres;
+      }
+    }
+  }
 
   if (timeStart !== null) meetingWhere.startMin = { gte: timeStart };
   if (timeEnd !== null) meetingWhere.endMin = { lte: timeEnd };

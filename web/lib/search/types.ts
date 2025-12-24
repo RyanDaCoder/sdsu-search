@@ -1,4 +1,5 @@
-export type DaysKey = "MWF" | "TR";
+// Day filter options - only MWF and TT
+export type DaysKey = "MWF" | "TT";
 
 export type SearchFilters = {
   term?: string;

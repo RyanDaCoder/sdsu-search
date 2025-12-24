@@ -320,7 +320,8 @@ export default function SearchClient() {
                     <div className="flex items-center gap-1">
                       {(() => {
                         const totalPages = Math.ceil(data.total / data.pageSize);
-                        const currentPage = data.page;
+                        // Use local page state for immediate UI feedback, not data.page which lags behind
+                        const currentPage = page;
                         const pages: (number | string)[] = [];
                         
                         // Show page numbers with ellipsis for large page counts
@@ -380,7 +381,7 @@ export default function SearchClient() {
                     </button>
                   </div>
                   <div className="text-center mt-2 text-xs text-[#737373]">
-                    Page {data.page} of {Math.ceil(data.total / data.pageSize)}
+                    Page {page} of {Math.ceil(data.total / data.pageSize)}
                   </div>
                 </div>
               )}

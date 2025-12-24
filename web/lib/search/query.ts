@@ -11,8 +11,9 @@ export function parseFiltersFromSearchParams(sp: URLSearchParams): SearchFilters
   const daysOne = sp.get("days");
 
   const days: DaysKey[] = [];
+  const validDays: DaysKey[] = ["MWF", "TT"];
   const pushIfValid = (d: string) => {
-    if (d === "MWF" || d === "TR") days.push(d);
+    if (validDays.includes(d as DaysKey)) days.push(d as DaysKey);
   };
 
   if (daysAll.length) daysAll.forEach(pushIfValid);
@@ -50,8 +51,12 @@ export function buildSearchParamsFromFilters(
   if (filters.modality) sp.set("modality", filters.modality);
   if (filters.instructor) sp.set("instructor", filters.instructor);
 
-  // backend expects ONE days string. If both selected, omit it = "Any"
-  if (filters.days?.length === 1) sp.set("days", filters.days[0]);
+  // Send multiple day filters - backend will match if meeting matches ANY selected day filter
+  if (filters.days && filters.days.length > 0) {
+    filters.days.forEach((day) => {
+      sp.append("days", day);
+    });
+  }
 
   if (typeof filters.timeStart === "number") sp.set("timeStart", String(filters.timeStart));
   if (typeof filters.timeEnd === "number") sp.set("timeEnd", String(filters.timeEnd));

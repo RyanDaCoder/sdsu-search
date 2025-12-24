@@ -153,28 +153,27 @@ export default function FilterSidebar({
       <div className="mb-5">
         <fieldset>
           <legend className="text-sm font-medium text-[#404040] mb-2">Days</legend>
-          <div className="flex gap-4 text-sm" role="group" aria-label="Select days">
-            <label className="flex items-center gap-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
-                checked={(filters.days ?? []).includes("MWF")}
-                onChange={() => setFilters({ ...filters, days: toggleDay(filters.days, "MWF") })}
-                aria-label="Monday, Wednesday, Friday"
-              />
-              <span className="text-[#171717] group-hover:text-[#8B1538] transition-colors">MWF</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
-                checked={(filters.days ?? []).includes("TR")}
-                onChange={() => setFilters({ ...filters, days: toggleDay(filters.days, "TR") })}
-                aria-label="Tuesday, Thursday"
-              />
-              <span className="text-[#171717] group-hover:text-[#8B1538] transition-colors">TR</span>
-            </label>
+          <div className="flex flex-wrap gap-3 text-sm" role="group" aria-label="Select day combinations">
+            {[
+              { key: "MWF" as DaysKey, label: "Mon/Wed/Fri" },
+              { key: "TT" as DaysKey, label: "Tue/Thu" },
+            ].map(({ key, label }) => (
+              <label key={key} className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
+                  checked={(filters.days ?? []).includes(key)}
+                  onChange={() => setFilters({ ...filters, days: toggleDay(filters.days, key) })}
+                  aria-label={label}
+                />
+                <span className="text-[#171717] group-hover:text-[#8B1538] transition-colors whitespace-nowrap">
+                  {label}
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="text-xs text-[#737373] mt-2" role="note">
+            Select one or both options. Multiple selections will find courses matching any selected option.
           </div>
         </fieldset>
       </div>
