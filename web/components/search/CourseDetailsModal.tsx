@@ -15,24 +15,24 @@ export default function CourseDetailsModal({ course, isOpen, onClose }: CourseDe
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl m-4"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-2xl m-4 border border-[#E5E5E5]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b p-4 flex items-start justify-between">
+        <div className="sticky top-0 bg-white border-b border-[#E5E5E5] p-5 flex items-start justify-between z-10">
           <div>
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-2xl font-semibold text-[#2C2C2C]">
               {course.subject} {course.number}
             </h2>
-            <p className="text-sm opacity-70 mt-1">{course.title ?? "(Untitled)"}</p>
+            <p className="text-sm text-[#525252] mt-1.5">{course.title ?? "(Untitled)"}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-2xl leading-none opacity-60 hover:opacity-100"
+            className="text-2xl leading-none text-[#737373] hover:text-[#2C2C2C] transition-colors p-1"
             aria-label="Close"
           >
             ×
@@ -40,24 +40,24 @@ export default function CourseDetailsModal({ course, isOpen, onClose }: CourseDe
         </div>
 
         {/* Content */}
-        <div className="p-4 space-y-4">
+        <div className="p-5 space-y-5">
           {/* Basic Info */}
           <div>
-            <h3 className="font-medium mb-2">Course Information</h3>
-            <div className="space-y-1 text-sm">
+            <h3 className="font-semibold text-[#2C2C2C] mb-3">Course Information</h3>
+            <div className="space-y-2 text-sm">
               {course.units && (
-                <div>
-                  <span className="opacity-60">Units:</span> {course.units}
+                <div className="text-[#404040]">
+                  <span className="font-medium text-[#525252]">Units:</span> {course.units}
                 </div>
               )}
               {course.geCodes && course.geCodes.length > 0 && (
                 <div>
-                  <span className="opacity-60">GE Requirements:</span>
-                  <div className="mt-1 flex flex-wrap gap-1">
+                  <span className="font-medium text-[#525252]">GE Requirements:</span>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     {course.geCodes.map((geCode) => (
                       <span
                         key={geCode}
-                        className="inline-block rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800"
+                        className="inline-block rounded-full bg-[#8B1538]/10 text-[#8B1538] px-2.5 py-1 text-xs font-medium border border-[#8B1538]/20"
                       >
                         {geCode}
                       </span>
@@ -70,45 +70,45 @@ export default function CourseDetailsModal({ course, isOpen, onClose }: CourseDe
 
           {/* Sections */}
           <div>
-            <h3 className="font-medium mb-2">Sections ({course.sections.length})</h3>
+            <h3 className="font-semibold text-[#2C2C2C] mb-3">Sections ({course.sections.length})</h3>
             <div className="space-y-3">
               {course.sections.map((section) => (
-                <div key={section.id} className="border rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
+                <div key={section.id} className="border border-[#E5E5E5] rounded-lg bg-[#F9F9F9] p-4">
+                  <div className="flex items-center justify-between mb-3">
                     <div>
-                      <span className="font-medium">Section {section.sectionCode ?? "?"}</span>
-                      <span className="text-sm opacity-60 ml-2">
+                      <span className="font-semibold text-[#2C2C2C]">Section {section.sectionCode ?? "?"}</span>
+                      <span className="text-sm text-[#737373] ml-2">
                         · {section.modality ?? "UNKNOWN"} · {section.status ?? "UNKNOWN"}
                       </span>
                     </div>
                   </div>
 
-                  <div className="text-sm space-y-2">
-                    <div>
-                      <span className="opacity-60">Term:</span> {section.term.name} ({section.term.code})
+                  <div className="text-sm space-y-2.5">
+                    <div className="text-[#404040]">
+                      <span className="font-medium text-[#525252]">Term:</span> {section.term.name} ({section.term.code})
                     </div>
 
                     {section.meetings && section.meetings.length > 0 ? (
                       <div>
-                        <span className="opacity-60">Meetings:</span>
-                        <div className="mt-1 space-y-1">
+                        <span className="font-medium text-[#525252]">Meetings:</span>
+                        <div className="mt-1.5 space-y-1.5">
                           {section.meetings.map((m) => (
-                            <div key={m.id} className="pl-2">
+                            <div key={m.id} className="pl-2 text-[#404040]">
                               {m.days || "TBA"} {m.startMin != null && m.endMin != null
                                 ? `${minToTimeLabel(m.startMin)}–${minToTimeLabel(m.endMin)}`
                                 : ""}
-                              {m.location && <span className="opacity-60"> · {m.location}</span>}
+                              {m.location && <span className="text-[#737373]"> · {m.location}</span>}
                             </div>
                           ))}
                         </div>
                       </div>
                     ) : (
-                      <div className="opacity-60">No scheduled meetings</div>
+                      <div className="text-[#737373]">No scheduled meetings</div>
                     )}
 
                     {section.instructors && section.instructors.length > 0 && (
-                      <div>
-                        <span className="opacity-60">Instructors:</span>{" "}
+                      <div className="text-[#404040]">
+                        <span className="font-medium text-[#525252]">Instructors:</span>{" "}
                         {section.instructors.map((x) => x.instructor.name).join(", ")}
                       </div>
                     )}
@@ -120,10 +120,10 @@ export default function CourseDetailsModal({ course, isOpen, onClose }: CourseDe
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t p-4">
+        <div className="sticky bottom-0 bg-white border-t border-[#E5E5E5] p-4">
           <button
             onClick={onClose}
-            className="w-full rounded border px-4 py-2 text-sm hover:bg-black/5"
+            className="w-full rounded-md border border-[#D4D4D4] bg-white px-4 py-2.5 text-sm font-medium text-[#8B1538] hover:bg-[#8B1538] hover:text-white hover:border-[#8B1538] transition-colors"
           >
             Close
           </button>
