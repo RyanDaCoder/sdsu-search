@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import SearchClient from "./SearchClient";
+import ToastContainer from "@/components/ui/ToastContainer";
 
 export default function Page() {
   return (
@@ -37,6 +38,8 @@ export default function Page() {
           <SearchClient />
         </Suspense>
       </main>
+
+      <ToastContainer />
     </div>
   );
 }

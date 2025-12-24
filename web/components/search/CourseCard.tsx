@@ -4,6 +4,7 @@ import { useMemo, useState, memo } from "react";
 import type { SearchCourse } from "@/lib/search/types";
 import { minToTimeLabel } from "@/lib/search/time";
 import { useScheduleStore } from "@/lib/schedule/store";
+import { useToastStore } from "@/lib/toast/store";
 import CourseDetailsModal from "./CourseDetailsModal";
 
 function CourseCard({ course }: { course: SearchCourse }) {
@@ -11,6 +12,7 @@ function CourseCard({ course }: { course: SearchCourse }) {
   const [showDetails, setShowDetails] = useState(false);
   const addSection = useScheduleStore((s) => s.addSection);
   const hasSection = useScheduleStore((s) => s.hasSection);
+  const addToast = useToastStore((s) => s.addToast);
 
   const header = useMemo(() => {
     const code = `${course.subject} ${course.number}`;
@@ -95,7 +97,12 @@ function CourseCard({ course }: { course: SearchCourse }) {
                         section: s,
                       });
 
-                      if (!result.ok) return;
+                      if (!result.ok) {
+                        addToast(result.message, "error");
+                        return;
+                      }
+
+                      addToast(`${courseCode} added to schedule`, "success");
 
                     }}
                   >

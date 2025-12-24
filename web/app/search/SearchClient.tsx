@@ -15,6 +15,8 @@ import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import FilterSidebar from "../../components/search/FilterSidebar";
 import ResultsList from "../../components/search/ResultsList";
 import ActiveFilters from "../../components/search/ActiveFilters";
+import KeyboardShortcutsModal from "../../components/ui/KeyboardShortcutsModal";
+import { useToastStore } from "@/lib/toast/store";
 
 // Lazy load schedule panel for better initial page load
 const SchedulePanel = lazy(() => import("@/components/schedule/SchedulePanel").then(m => ({ default: m.SchedulePanel })));
@@ -40,6 +42,8 @@ export default function SearchClient() {
   const [filters, setFilters] = useState<SearchFilters>(initialFilters);
   const [page, setPage] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const addToast = useToastStore((s) => s.addToast);
 
   // Track if we're syncing from URL (to prevent filter-change effect from resetting page)
   const [isSyncingFromUrl, setIsSyncingFromUrl] = useState(false);
@@ -123,16 +127,25 @@ export default function SearchClient() {
         keywordInputRef.current?.focus();
       }
 
-      // "?" to show keyboard shortcuts help (future enhancement)
-      // Esc to close mobile filters
-      if (e.key === "Escape" && mobileFiltersOpen) {
-        setMobileFiltersOpen(false);
+      // "?" to show keyboard shortcuts help
+      if (e.key === "?") {
+        e.preventDefault();
+        setShowShortcuts(true);
+      }
+
+      // Esc to close mobile filters or shortcuts modal
+      if (e.key === "Escape") {
+        if (showShortcuts) {
+          setShowShortcuts(false);
+        } else if (mobileFiltersOpen) {
+          setMobileFiltersOpen(false);
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mobileFiltersOpen]);
+  }, [mobileFiltersOpen, showShortcuts]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_420px] gap-4 lg:gap-6">
@@ -227,10 +240,27 @@ export default function SearchClient() {
           <button
             className="inline-flex items-center gap-1.5 text-sm text-[#8B1538] hover:text-[#6B1029] underline font-medium transition-colors whitespace-nowrap py-2 sm:py-0 touch-manipulation"
             onClick={() => {
+              const hadFilters = !!(
+                filters.q ||
+                filters.subject ||
+                filters.number ||
+                filters.days?.length ||
+                filters.timeStart !== undefined ||
+                filters.timeEnd !== undefined ||
+                filters.modality ||
+                filters.instructor ||
+                filters.ge?.length ||
+                (filters.term && filters.term !== "20251")
+              );
+
               setFilters({
                 term: filters.term ?? "20251", // keep default term
               });
               setPage(1);
+
+              if (hadFilters) {
+                addToast("All filters cleared", "info");
+              }
             }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -378,6 +408,12 @@ export default function SearchClient() {
           <SchedulePanel />
         </Suspense>
       </div>
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 }
