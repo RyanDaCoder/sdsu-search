@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import SearchClient from "./SearchClient";
 
 export default function Page() {
@@ -26,7 +27,15 @@ export default function Page() {
       </div>
 
       <main id="main-content" className="mt-6">
-        <SearchClient />
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-12">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-[#8B1538] border-t-transparent"></div>
+            </div>
+          }
+        >
+          <SearchClient />
+        </Suspense>
       </main>
     </div>
   );

@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, memo } from "react";
 import type { SearchCourse } from "@/lib/search/types";
 import { minToTimeLabel } from "@/lib/search/time";
 import { useScheduleStore } from "@/lib/schedule/store";
 import CourseDetailsModal from "./CourseDetailsModal";
 
-export default function CourseCard({ course }: { course: SearchCourse }) {
+function CourseCard({ course }: { course: SearchCourse }) {
   const [open, setOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const addSection = useScheduleStore((s) => s.addSection);
@@ -137,3 +137,17 @@ export default function CourseCard({ course }: { course: SearchCourse }) {
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when parent updates
+export default memo(CourseCard, (prevProps, nextProps) => {
+  // Only re-render if course data actually changed
+  return (
+    prevProps.course.id === nextProps.course.id &&
+    prevProps.course.subject === nextProps.course.subject &&
+    prevProps.course.number === nextProps.course.number &&
+    prevProps.course.title === nextProps.course.title &&
+    prevProps.course.units === nextProps.course.units &&
+    prevProps.course.sections.length === nextProps.course.sections.length &&
+    JSON.stringify(prevProps.course.geCodes) === JSON.stringify(nextProps.course.geCodes)
+  );
+});

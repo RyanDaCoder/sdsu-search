@@ -1,10 +1,11 @@
 "use client";
 
+import { memo } from "react";
 import type { SearchCourse } from "@/lib/search/types";
 import CourseCard from "./CourseCard";
 import CourseCardSkeleton from "./CourseCardSkeleton";
 
-export default function ResultsList({
+function ResultsList({
   isLoading,
   results,
 }: {
@@ -48,3 +49,15 @@ export default function ResultsList({
     </div>
   );
 }
+
+// Memoize to prevent re-renders when parent state changes but results are the same
+export default memo(ResultsList, (prevProps, nextProps) => {
+  // Only re-render if loading state or results actually changed
+  if (prevProps.isLoading !== nextProps.isLoading) return false;
+  if (prevProps.results.length !== nextProps.results.length) return false;
+  
+  // Check if any course IDs changed
+  const prevIds = prevProps.results.map(r => r.id).join(',');
+  const nextIds = nextProps.results.map(r => r.id).join(',');
+  return prevIds === nextIds;
+});

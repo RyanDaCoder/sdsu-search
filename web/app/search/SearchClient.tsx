@@ -1,9 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, lazy, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SchedulePanel } from "@/components/schedule/SchedulePanel";
 
 import type { SearchFilters, SearchResponse } from "@/lib/search/types";
 import {
@@ -16,6 +15,9 @@ import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import FilterSidebar from "../../components/search/FilterSidebar";
 import ResultsList from "../../components/search/ResultsList";
 import ActiveFilters from "../../components/search/ActiveFilters";
+
+// Lazy load schedule panel for better initial page load
+const SchedulePanel = lazy(() => import("@/components/schedule/SchedulePanel").then(m => ({ default: m.SchedulePanel })));
 
 const PAGE_SIZE = 20;
 
@@ -359,7 +361,22 @@ export default function SearchClient() {
 
       {/* Schedule Panel - Stacked on mobile, sidebar on desktop */}
       <div className="order-last lg:order-none">
-        <SchedulePanel />
+        <Suspense
+          fallback={
+            <aside className="w-full lg:w-[420px] shrink-0 border border-[#E5E5E5] rounded-lg bg-white p-5 space-y-4 lg:sticky lg:top-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-5 w-5 bg-[#E5E5E5] rounded animate-pulse"></div>
+                <div className="h-5 w-24 bg-[#E5E5E5] rounded animate-pulse"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-20 bg-[#E5E5E5] rounded animate-pulse"></div>
+                <div className="h-20 bg-[#E5E5E5] rounded animate-pulse"></div>
+              </div>
+            </aside>
+          }
+        >
+          <SchedulePanel />
+        </Suspense>
       </div>
     </div>
   );
