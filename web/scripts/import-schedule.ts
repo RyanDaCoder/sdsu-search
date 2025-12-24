@@ -7,6 +7,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { config } from "dotenv";
 import { parseScheduleCsv } from "../lib/import/adapters/genericCsv";
 import { normalizeScheduleRow } from "../lib/import/normalize";
+import { validateScheduleRows } from "../lib/import/validate";
+import { writeImportLog } from "../lib/import/logging";
 import type { ScheduleMappingConfig } from "../lib/import/types";
 
 config({ path: ".env" });
@@ -23,6 +25,7 @@ async function main() {
   let csvPath: string | null = null;
   let mappingPath: string | null = null;
   let dryRun = false;
+  let strict = false;
 
   // Parse arguments
   for (let i = 0; i < args.length; i++) {
@@ -34,6 +37,8 @@ async function main() {
       i++;
     } else if (args[i] === "--dry-run") {
       dryRun = true;
+    } else if (args[i] === "--strict") {
+      strict = true;
     }
   }
 
@@ -77,10 +82,60 @@ async function main() {
   console.log(`Parsed ${rows.length} rows`);
   console.log("");
 
-  // Normalize and group by section
-  const normalizedRows = rows.map((row) =>
-    normalizeScheduleRow(row, mapping.valueMaps)
-  );
+  // Normalize rows
+  const normalizedRows = rows.map((row) => normalizeScheduleRow(row, mapping.valueMaps));
+
+  // Validate
+  console.log("Validating rows...");
+  const validation = validateScheduleRows(normalizedRows, strict);
+
+  // Print validation summary
+  console.log("\nValidation Summary:");
+  console.log(`  Total rows: ${validation.stats.totalRows}`);
+  console.log(`  Valid rows: ${validation.stats.validRows}`);
+  console.log(`  Invalid rows: ${validation.stats.invalidRows}`);
+  console.log(`  Errors: ${validation.errors.length}`);
+  console.log(`  Warnings: ${validation.warnings.length}`);
+
+  if (validation.errors.length > 0) {
+    console.log("\n❌ Errors (first 20):");
+    validation.errors.slice(0, 20).forEach((error) => {
+      const rowInfo = error.rowIndex !== undefined ? `Row ${error.rowIndex + 1}` : "";
+      const fieldInfo = error.field ? ` [${error.field}]` : "";
+      console.log(`  ${rowInfo}${fieldInfo}: ${error.message}${error.value ? ` (value: ${error.value})` : ""}`);
+    });
+    if (validation.errors.length > 20) {
+      console.log(`  ... and ${validation.errors.length - 20} more errors`);
+    }
+  }
+
+  if (validation.warnings.length > 0) {
+    console.log("\n⚠️  Warnings (first 20):");
+    validation.warnings.slice(0, 20).forEach((warning) => {
+      const rowInfo = warning.rowIndex !== undefined ? `Row ${warning.rowIndex + 1}` : "";
+      const fieldInfo = warning.field ? ` [${warning.field}]` : "";
+      console.log(`  ${rowInfo}${fieldInfo}: ${warning.message}`);
+    });
+    if (validation.warnings.length > 20) {
+      console.log(`  ... and ${validation.warnings.length - 20} more warnings`);
+    }
+  }
+
+  // Abort if errors found
+  if (validation.errors.length > 0) {
+    console.error("\n❌ Import aborted due to validation errors");
+    await prisma.$disconnect();
+    process.exit(1);
+  }
+
+  // Abort if strict mode and warnings found
+  if (strict && validation.warnings.length > 0) {
+    console.error("\n❌ Import aborted due to warnings in strict mode");
+    await prisma.$disconnect();
+    process.exit(1);
+  }
+
+  console.log("");
 
   // Group by (termCode, subject, number, sectionKey) to handle perRow meeting mode
   const sectionMap = new Map<string, typeof normalizedRows>();
@@ -97,46 +152,93 @@ async function main() {
     console.log(`  ${sectionMap.size} sections`);
     console.log(`  ${normalizedRows.reduce((sum, r) => sum + r.meetings.length, 0)} meetings`);
     console.log("");
-    console.log("Sample rows:");
-    normalizedRows.slice(0, 3).forEach((row) => {
-      console.log(`  ${row.subject} ${row.number} - ${row.sectionKey} (${row.meetings.length} meetings)`);
-    });
+
+    // Write log even in dry-run
+    const logPath = writeImportLog(
+      {
+        timestamp: new Date().toISOString(),
+        type: "schedule",
+        termCode: normalizedRows[0]?.termCode,
+        rowsRead: rows.length,
+        rowsWritten: 0,
+        errors: validation.errors.map((e) => ({
+          message: e.message,
+          rowIndex: e.rowIndex,
+        })),
+        warnings: validation.warnings.map((w) => ({
+          message: w.message,
+          rowIndex: w.rowIndex,
+        })),
+        created: {},
+        updated: {},
+        mappingFile: resolvedMappingPath,
+        csvFile: resolvedCsvPath,
+        cliFlags: args,
+        dryRun: true,
+      },
+      path.resolve(".")
+    );
+    console.log(`📝 Log written to: ${logPath}`);
+
     await prisma.$disconnect();
     return;
   }
 
   // Import to database
-  let termsUpserted = 0;
-  let coursesUpserted = 0;
-  let sectionsUpserted = 0;
+  let termsCreated = 0;
+  let termsUpdated = 0;
+  let coursesCreated = 0;
+  let coursesUpdated = 0;
+  let sectionsCreated = 0;
+  let sectionsUpdated = 0;
   let meetingsCreated = 0;
 
   for (const [key, sectionRows] of sectionMap.entries()) {
     const firstRow = sectionRows[0];
     
     // Upsert Term
-    const term = await prisma.term.upsert({
+    const existingTerm = await prisma.term.findUnique({
       where: { code: firstRow.termCode },
-      update: {},
-      create: { code: firstRow.termCode, name: `Term ${firstRow.termCode}` },
     });
-    if (term) termsUpserted++;
+    const term = existingTerm
+      ? await prisma.term.update({
+          where: { code: firstRow.termCode },
+          data: {},
+        })
+      : await prisma.term.create({
+          data: { code: firstRow.termCode, name: `Term ${firstRow.termCode}` },
+        });
+    if (existingTerm) {
+      termsUpdated++;
+    } else {
+      termsCreated++;
+    }
 
     // Upsert Course
-    const course = await prisma.course.upsert({
+    const existingCourse = await prisma.course.findUnique({
       where: { subject_number: { subject: firstRow.subject, number: firstRow.number } },
-      update: {
-        ...(firstRow.title && { title: firstRow.title }),
-        ...(firstRow.units && { units: firstRow.units }),
-      },
-      create: {
-        subject: firstRow.subject,
-        number: firstRow.number,
-        title: firstRow.title,
-        units: firstRow.units,
-      },
     });
-    if (course) coursesUpserted++;
+    const course = existingCourse
+      ? await prisma.course.update({
+          where: { subject_number: { subject: firstRow.subject, number: firstRow.number } },
+          data: {
+            ...(firstRow.title && { title: firstRow.title }),
+            ...(firstRow.units && { units: firstRow.units }),
+          },
+        })
+      : await prisma.course.create({
+          data: {
+            subject: firstRow.subject,
+            number: firstRow.number,
+            title: firstRow.title,
+            units: firstRow.units,
+          },
+        });
+    if (existingCourse) {
+      coursesUpdated++;
+    } else {
+      coursesCreated++;
+    }
 
     // Combine meetings from all rows for this section
     const allMeetings = sectionRows.flatMap((r) => r.meetings);
@@ -162,6 +264,7 @@ async function main() {
           campus: firstRow.location,
         },
       });
+      sectionsCreated++;
     } else {
       section = await prisma.section.update({
         where: { id: section.id },
@@ -171,8 +274,8 @@ async function main() {
           campus: firstRow.location,
         },
       });
+      sectionsUpdated++;
     }
-    sectionsUpserted++;
 
     // Delete existing meetings and recreate
     await prisma.meeting.deleteMany({
@@ -218,10 +321,46 @@ async function main() {
   }
 
   console.log("Import complete ✅");
-  console.log(`  Terms upserted: ${termsUpserted}`);
-  console.log(`  Courses upserted: ${coursesUpserted}`);
-  console.log(`  Sections upserted: ${sectionsUpserted}`);
-  console.log(`  Meetings created: ${meetingsCreated}`);
+  console.log(`  Terms: ${termsCreated} created, ${termsUpdated} updated`);
+  console.log(`  Courses: ${coursesCreated} created, ${coursesUpdated} updated`);
+  console.log(`  Sections: ${sectionsCreated} created, ${sectionsUpdated} updated`);
+  console.log(`  Meetings: ${meetingsCreated} created`);
+
+  // Write import log
+  const logPath = writeImportLog(
+    {
+      timestamp: new Date().toISOString(),
+      type: "schedule",
+      termCode: normalizedRows[0]?.termCode,
+      rowsRead: rows.length,
+      rowsWritten: normalizedRows.length,
+      errors: validation.errors.map((e) => ({
+        message: e.message,
+        rowIndex: e.rowIndex,
+      })),
+      warnings: validation.warnings.map((w) => ({
+        message: w.message,
+        rowIndex: w.rowIndex,
+      })),
+      created: {
+        terms: termsCreated,
+        courses: coursesCreated,
+        sections: sectionsCreated,
+        meetings: meetingsCreated,
+      },
+      updated: {
+        terms: termsUpdated,
+        courses: coursesUpdated,
+        sections: sectionsUpdated,
+      },
+      mappingFile: resolvedMappingPath,
+      csvFile: resolvedCsvPath,
+      cliFlags: args,
+      dryRun: false,
+    },
+    path.resolve(".")
+  );
+  console.log(`\n📝 Log written to: ${logPath}`);
 
   await prisma.$disconnect();
 }

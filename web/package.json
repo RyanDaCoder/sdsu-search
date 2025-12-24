@@ -9,7 +9,8 @@
     "lint": "eslint",
     "import:schedule": "tsx scripts/import-schedule.ts",
     "import:requirements": "tsx scripts/import-requirements.ts",
-    "import:all": "tsx scripts/import-all.ts"
+    "import:all": "tsx scripts/import-all.ts",
+    "report:term": "tsx scripts/report-term.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",

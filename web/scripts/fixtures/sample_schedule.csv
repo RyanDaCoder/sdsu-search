@@ -1,7 +1,7 @@
 TERM,SUBJ,CATALOG_NBR,CLASS_NBR,TITLE,UNITS,STATUS,MODALITY,INSTRUCTOR,DAYS,START,END,ROOM
-20261,CS,210,12345,Data Structures,3,Open,In Person,Smith,MWF,9:00 AM,9:50 AM,GMCS 329
-20261,CS,250,22345,Intro to Algorithms,3,Open,In Person,Chen,TR,11:00 AM,12:15 PM,EIS 101
-20261,MATH,254,32345,Linear Algebra,3,Open,In Person,Palacios,TR,1:00 PM,2:15 PM,NE 060
-20261,ENGL,100,42345,Composition,3,Open,Online Synchronous,Taylor,MWF,10:00 AM,10:50 AM,Online
-20261,BIOL,100,62345,General Biology,4,Open,In Person,Patel,TR,12:30 PM,1:45 PM,LS 102
+20251,CS,210,12345,Data Structures,3,Open,In Person,Smith,MWF,9:00 AM,9:50 AM,GMCS 329
+20251,CS,250,22345,Intro to Algorithms,3,Open,In Person,Chen,TR,11:00 AM,12:15 PM,EIS 101
+20251,MATH,254,32345,Linear Algebra,3,Open,In Person,Palacios,TR,1:00 PM,2:15 PM,NE 060
+20251,ENGL,100,42345,Composition,3,Open,Online Synchronous,Taylor,MWF,10:00 AM,10:50 AM,Online
+20251,BIOL,100,62345,General Biology,4,Open,In Person,Patel,TR,12:30 PM,1:45 PM,LS 102
 

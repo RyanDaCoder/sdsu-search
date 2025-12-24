@@ -7,6 +7,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { config } from "dotenv";
 import { parseRequirementCsv } from "../lib/import/adapters/genericCsv";
 import { normalizeRequirementRow } from "../lib/import/normalize";
+import { validateRequirementRows } from "../lib/import/validate";
+import { writeImportLog } from "../lib/import/logging";
 import type { RequirementMappingConfig } from "../lib/import/types";
 
 config({ path: ".env" });
@@ -23,6 +25,7 @@ async function main() {
   let csvPath: string | null = null;
   let mappingPath: string | null = null;
   let dryRun = false;
+  let strict = false;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--file" && i + 1 < args.length) {
@@ -33,6 +36,8 @@ async function main() {
       i++;
     } else if (args[i] === "--dry-run") {
       dryRun = true;
+    } else if (args[i] === "--strict") {
+      strict = true;
     }
   }
 
@@ -75,6 +80,58 @@ async function main() {
 
   const normalizedRows = rows.map(normalizeRequirementRow);
 
+  // Validate
+  console.log("Validating rows...");
+  const validation = validateRequirementRows(normalizedRows);
+
+  // Print validation summary
+  console.log("\nValidation Summary:");
+  console.log(`  Total rows: ${validation.stats.totalRows}`);
+  console.log(`  Valid rows: ${validation.stats.validRows}`);
+  console.log(`  Invalid rows: ${validation.stats.invalidRows}`);
+  console.log(`  Errors: ${validation.errors.length}`);
+  console.log(`  Warnings: ${validation.warnings.length}`);
+
+  if (validation.errors.length > 0) {
+    console.log("\n❌ Errors (first 20):");
+    validation.errors.slice(0, 20).forEach((error) => {
+      const rowInfo = error.rowIndex !== undefined ? `Row ${error.rowIndex + 1}` : "";
+      const fieldInfo = error.field ? ` [${error.field}]` : "";
+      console.log(`  ${rowInfo}${fieldInfo}: ${error.message}${error.value ? ` (value: ${error.value})` : ""}`);
+    });
+    if (validation.errors.length > 20) {
+      console.log(`  ... and ${validation.errors.length - 20} more errors`);
+    }
+  }
+
+  if (validation.warnings.length > 0) {
+    console.log("\n⚠️  Warnings (first 20):");
+    validation.warnings.slice(0, 20).forEach((warning) => {
+      const rowInfo = warning.rowIndex !== undefined ? `Row ${warning.rowIndex + 1}` : "";
+      const fieldInfo = warning.field ? ` [${warning.field}]` : "";
+      console.log(`  ${rowInfo}${fieldInfo}: ${warning.message}`);
+    });
+    if (validation.warnings.length > 20) {
+      console.log(`  ... and ${validation.warnings.length - 20} more warnings`);
+    }
+  }
+
+  // Abort if errors found
+  if (validation.errors.length > 0) {
+    console.error("\n❌ Import aborted due to validation errors");
+    await prisma.$disconnect();
+    process.exit(1);
+  }
+
+  // Abort if strict mode and warnings found
+  if (strict && validation.warnings.length > 0) {
+    console.error("\n❌ Import aborted due to warnings in strict mode");
+    await prisma.$disconnect();
+    process.exit(1);
+  }
+
+  console.log("");
+
   if (dryRun) {
     console.log("Would import:");
     console.log(`  ${new Set(normalizedRows.map((r) => r.requirementCode)).size} unique requirements`);
@@ -84,21 +141,60 @@ async function main() {
     normalizedRows.slice(0, 5).forEach((row) => {
       console.log(`  ${row.subject} ${row.number} -> ${row.requirementCode}`);
     });
+
+    // Write log even in dry-run
+    const logPath = writeImportLog(
+      {
+        timestamp: new Date().toISOString(),
+        type: "requirements",
+        rowsRead: rows.length,
+        rowsWritten: 0,
+        errors: validation.errors.map((e) => ({
+          message: e.message,
+          rowIndex: e.rowIndex,
+        })),
+        warnings: validation.warnings.map((w) => ({
+          message: w.message,
+          rowIndex: w.rowIndex,
+        })),
+        created: {},
+        updated: {},
+        mappingFile: resolvedMappingPath,
+        csvFile: resolvedCsvPath,
+        cliFlags: args,
+        dryRun: true,
+      },
+      path.resolve(".")
+    );
+    console.log(`\n📝 Log written to: ${logPath}`);
+
     await prisma.$disconnect();
     return;
   }
 
-  let requirementsUpserted = 0;
+  let requirementsCreated = 0;
+  let requirementsUpdated = 0;
   let linksCreated = 0;
+  let coursesNotFound = 0;
 
   for (const row of normalizedRows) {
     // Upsert Requirement
-    const requirement = await prisma.requirement.upsert({
+    const existingReq = await prisma.requirement.findUnique({
       where: { code: row.requirementCode },
-      update: {},
-      create: { code: row.requirementCode, name: row.requirementCode },
     });
-    if (requirement) requirementsUpserted++;
+    const requirement = existingReq
+      ? await prisma.requirement.update({
+          where: { code: row.requirementCode },
+          data: {},
+        })
+      : await prisma.requirement.create({
+          data: { code: row.requirementCode, name: row.requirementCode },
+        });
+    if (existingReq) {
+      requirementsUpdated++;
+    } else {
+      requirementsCreated++;
+    }
 
     // Find course
     const course = await prisma.course.findUnique({
@@ -106,6 +202,7 @@ async function main() {
     });
 
     if (!course) {
+      coursesNotFound++;
       console.warn(`Course not found: ${row.subject} ${row.number} - skipping requirement link`);
       continue;
     }
@@ -128,8 +225,42 @@ async function main() {
   }
 
   console.log("Import complete ✅");
-  console.log(`  Requirements upserted: ${requirementsUpserted}`);
+  console.log(`  Requirements: ${requirementsCreated} created, ${requirementsUpdated} updated`);
   console.log(`  Course-Requirement links created: ${linksCreated}`);
+  if (coursesNotFound > 0) {
+    console.log(`  ⚠️  Courses not found: ${coursesNotFound}`);
+  }
+
+  // Write import log
+  const logPath = writeImportLog(
+    {
+      timestamp: new Date().toISOString(),
+      type: "requirements",
+      rowsRead: rows.length,
+      rowsWritten: normalizedRows.length,
+      errors: validation.errors.map((e) => ({
+        message: e.message,
+        rowIndex: e.rowIndex,
+      })),
+      warnings: validation.warnings.map((w) => ({
+        message: w.message,
+        rowIndex: w.rowIndex,
+      })),
+      created: {
+        requirements: requirementsCreated,
+        courseRequirements: linksCreated,
+      },
+      updated: {
+        requirements: requirementsUpdated,
+      },
+      mappingFile: resolvedMappingPath,
+      csvFile: resolvedCsvPath,
+      cliFlags: args,
+      dryRun: false,
+    },
+    path.resolve(".")
+  );
+  console.log(`\n📝 Log written to: ${logPath}`);
 
   await prisma.$disconnect();
 }
