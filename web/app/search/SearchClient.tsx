@@ -15,6 +15,7 @@ import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 
 import FilterSidebar from "../../components/search/FilterSidebar";
 import ResultsList from "../../components/search/ResultsList";
+import ActiveFilters from "../../components/search/ActiveFilters";
 
 const PAGE_SIZE = 20;
 
@@ -198,6 +199,7 @@ export default function SearchClient() {
 
           {!error && (
             <>
+              <ActiveFilters filters={filters} setFilters={setFilters} />
               <ResultsList isLoading={isLoading} results={data?.results ?? []} />
 
               {/* Pagination */}
