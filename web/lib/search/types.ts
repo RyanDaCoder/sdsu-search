@@ -59,5 +59,9 @@ export type SearchCourse = {
 
 export type SearchResponse = {
   count: number;
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
   results: SearchCourse[];
 };

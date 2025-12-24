@@ -11,7 +11,14 @@ export default function ResultsList({
   results: SearchCourse[];
 }) {
   if (isLoading && results.length === 0) {
-    return <div className="rounded border p-4 text-sm">Loading courses…</div>;
+    return (
+      <div className="rounded border p-4 text-sm">
+        <div className="inline-flex items-center gap-2">
+          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+          Loading courses…
+        </div>
+      </div>
+    );
   }
 
   if (!isLoading && results.length === 0) {
@@ -21,7 +28,6 @@ export default function ResultsList({
       </div>
     );
   }
-  console.log("DBG CourseCard:", CourseCard, typeof CourseCard);
 
   return (
     <div className="space-y-3">

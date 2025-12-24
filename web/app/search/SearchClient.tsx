@@ -16,6 +16,8 @@ import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import FilterSidebar from "../../components/search/FilterSidebar";
 import ResultsList from "../../components/search/ResultsList";
 
+const PAGE_SIZE = 20;
+
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Request failed (${res.status})`);
@@ -32,11 +34,14 @@ export default function SearchClient() {
   }, [sp]);
 
   const [filters, setFilters] = useState<SearchFilters>(initialFilters);
+  const [page, setPage] = useState(1);
 
   // Sync state when user navigates back/forward
   useEffect(() => {
     setFilters(initialFilters);
-  }, [initialFilters]);
+    const pageParam = sp.get("page");
+    setPage(pageParam ? parseInt(pageParam, 10) || 1 : 1);
+  }, [initialFilters, sp]);
 
   // Debounce only the "q" (keyword) field for fast UX
   const debouncedQ = useDebouncedValue(filters.q ?? "", 250);
@@ -45,17 +50,22 @@ export default function SearchClient() {
     return { ...filters, q: debouncedQ || undefined };
   }, [filters, debouncedQ]);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filters.q, filters.subject, filters.number, filters.modality, filters.instructor, filters.days, filters.timeStart, filters.timeEnd, filters.ge]);
+
   // Push filters into the URL (query params)
   useEffect(() => {
-    const next = buildSearchParamsFromFilters(filters).toString();
+    const next = buildSearchParamsFromFilters(filters, page, PAGE_SIZE).toString();
     const curr = sp.toString();
     if (next !== curr) {
       router.replace(`/search?${next}`, { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  }, [filters, page]);
 
-  const apiUrl = useMemo(() => buildApiQuery(debouncedFilters), [debouncedFilters]);
+  const apiUrl = useMemo(() => buildApiQuery(debouncedFilters, page, PAGE_SIZE), [debouncedFilters, page]);
 
   const { data, error, isLoading } = useSWR<SearchResponse>(apiUrl, fetcher, {
     keepPreviousData: true,
@@ -69,16 +79,29 @@ export default function SearchClient() {
       <div>
         <div className="flex items-center justify-between">
           <div className="text-sm opacity-70">
-            {isLoading ? "Loading…" : error ? "Error" : `${data?.count ?? 0} result(s)`}
+            {isLoading ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                Loading…
+              </span>
+            ) : error ? (
+              <span className="text-red-600">Error loading results</span>
+            ) : (
+              <>
+                Showing {data?.count ?? 0} of {data?.total ?? 0} result{data?.total !== 1 ? "s" : ""}
+                {data?.page && data.page > 1 && ` (page ${data.page})`}
+              </>
+            )}
           </div>
 
           <button
             className="text-sm underline opacity-80 hover:opacity-100"
-            onClick={() =>
+            onClick={() => {
               setFilters({
                 term: filters.term ?? "20251", // keep default term
-              })
-            }
+              });
+              setPage(1);
+            }}
           >
             Clear all
           </button>
@@ -86,13 +109,48 @@ export default function SearchClient() {
 
         <div className="mt-3">
           {error && (
-            <div className="rounded border p-3 text-sm">
-              Failed to load results. ({String((error as Error).message)})
+            <div className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+              <div className="font-medium mb-1">Failed to load results</div>
+              <div className="opacity-80">{String((error as Error).message)}</div>
+              <button
+                className="mt-2 text-sm underline"
+                onClick={() => {
+                  // Retry by refetching
+                  window.location.reload();
+                }}
+              >
+                Retry
+              </button>
             </div>
           )}
 
           {!error && (
-            <ResultsList isLoading={isLoading} results={data?.results ?? []} />
+            <>
+              <ResultsList isLoading={isLoading} results={data?.results ?? []} />
+
+              {/* Pagination */}
+              {data && data.total > PAGE_SIZE && (
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  <button
+                    className="rounded border px-3 py-1.5 text-sm hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1 || isLoading}
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm opacity-70">
+                    Page {data.page} of {Math.ceil(data.total / data.pageSize)}
+                  </span>
+                  <button
+                    className="rounded border px-3 py-1.5 text-sm hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={!data.hasMore || isLoading}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

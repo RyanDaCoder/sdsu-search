@@ -11,6 +11,7 @@ type ScheduleState = {
 
   // UI helpers
   lastError: string | null;
+  conflictMap: Map<string, Conflict[]>; // sectionId -> conflicts
 
   // actions
   addSection: (item: ScheduleItem) => AddResult;
@@ -19,13 +20,30 @@ type ScheduleState = {
 
   // derived helpers
   hasSection: (sectionId: string) => boolean;
+  getConflicts: (sectionId: string) => Conflict[];
 };
+
+function computeConflictMap(items: ScheduleItem[]): Map<string, Conflict[]> {
+  const map = new Map<string, Conflict[]>();
+  for (let i = 0; i < items.length; i++) {
+    const conflicts = findConflicts(items, items[i]);
+    if (conflicts.length > 0) {
+      map.set(items[i].sectionId, conflicts);
+    }
+  }
+  return map;
+}
 
 export const useScheduleStore = create<ScheduleState>((set, get) => ({
   items: [],
   lastError: null,
+  conflictMap: new Map(),
 
   hasSection: (sectionId) => get().items.some((x) => x.sectionId === sectionId),
+
+  getConflicts: (sectionId) => {
+    return get().conflictMap.get(sectionId) ?? [];
+  },
 
   addSection: (item) => {
     const { items } = get();
@@ -37,17 +55,33 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     const conflicts = findConflicts(items, item);
     if (conflicts.length > 0) {
       const msg = "That section conflicts with something already in your schedule.";
-      set({ lastError: msg });
+      const newItems = [...items, item];
+      set({
+        lastError: msg,
+        items: newItems,
+        conflictMap: computeConflictMap(newItems),
+      });
       return { ok: false, conflicts, message: msg };
     }
 
-    set({ items: [...items, item], lastError: null });
+    const newItems = [...items, item];
+    set({
+      items: newItems,
+      lastError: null,
+      conflictMap: computeConflictMap(newItems),
+    });
     return { ok: true };
   },
 
   removeSection: (sectionId) => {
-    set((s) => ({ items: s.items.filter((x) => x.sectionId !== sectionId) }));
+    set((s) => {
+      const newItems = s.items.filter((x) => x.sectionId !== sectionId);
+      return {
+        items: newItems,
+        conflictMap: computeConflictMap(newItems),
+      };
+    });
   },
 
-  clear: () => set({ items: [], lastError: null }),
+  clear: () => set({ items: [], lastError: null, conflictMap: new Map() }),
 }));

@@ -35,7 +35,11 @@ export function parseFiltersFromSearchParams(sp: URLSearchParams): SearchFilters
   };
 }
 
-export function buildSearchParamsFromFilters(filters: SearchFilters): URLSearchParams {
+export function buildSearchParamsFromFilters(
+  filters: SearchFilters,
+  page?: number,
+  pageSize?: number
+): URLSearchParams {
   const sp = new URLSearchParams();
 
   sp.set("term", filters.term ?? "20251");
@@ -59,10 +63,14 @@ export function buildSearchParamsFromFilters(filters: SearchFilters): URLSearchP
     });
   }
 
+  // Pagination
+  if (page !== undefined) sp.set("page", String(page));
+  if (pageSize !== undefined) sp.set("pageSize", String(pageSize));
+
   return sp;
 }
 
-export function buildApiQuery(filters: SearchFilters): string {
-  const sp = buildSearchParamsFromFilters(filters);
+export function buildApiQuery(filters: SearchFilters, page?: number, pageSize?: number): string {
+  const sp = buildSearchParamsFromFilters(filters, page, pageSize);
   return `/api/search?${sp.toString()}`;
 }

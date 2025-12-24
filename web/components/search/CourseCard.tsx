@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import type { SearchCourse } from "@/lib/search/types";
 import { minToTimeLabel } from "@/lib/search/time";
 import { useScheduleStore } from "@/lib/schedule/store";
+import CourseDetailsModal from "./CourseDetailsModal";
 
 export default function CourseCard({ course }: { course: SearchCourse }) {
   const [open, setOpen] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const addSection = useScheduleStore((s) => s.addSection);
   const hasSection = useScheduleStore((s) => s.hasSection);
 
@@ -20,10 +22,30 @@ export default function CourseCard({ course }: { course: SearchCourse }) {
   return (
     <div className="rounded-lg border p-4">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="font-semibold">{header.code}</div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <div className="font-semibold">{header.code}</div>
+            <button
+              className="text-xs underline opacity-60 hover:opacity-100"
+              onClick={() => setShowDetails(true)}
+            >
+              Details
+            </button>
+          </div>
           <div className="text-sm opacity-80">{header.title}</div>
           {header.units && <div className="text-xs opacity-60 mt-1">{header.units}</div>}
+          {course.geCodes && course.geCodes.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {course.geCodes.map((geCode) => (
+                <span
+                  key={geCode}
+                  className="inline-block rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800"
+                >
+                  {geCode}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <button
@@ -33,6 +55,12 @@ export default function CourseCard({ course }: { course: SearchCourse }) {
           {open ? "Hide sections" : `Show sections (${course.sections.length})`}
         </button>
       </div>
+
+      <CourseDetailsModal
+        course={course}
+        isOpen={showDetails}
+        onClose={() => setShowDetails(false)}
+      />
 
       {open && (
         <div className="mt-4 space-y-3">

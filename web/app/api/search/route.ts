@@ -49,6 +49,11 @@ export async function GET(req: Request) {
   // GE filter: parse multiple ?ge=GE-IIB&ge=GE-IVC params
   const geCodes = searchParams.getAll("ge").filter(Boolean).map((g) => g.trim());
 
+  // Pagination
+  const page = Math.max(1, parseIntOrNull(searchParams.get("page")) ?? 1);
+  const pageSize = Math.min(100, Math.max(1, parseIntOrNull(searchParams.get("pageSize")) ?? 20));
+  const skip = (page - 1) * pageSize;
+
   // meeting filter
   const meetingWhere: any = {};
   const daysWhere = days ? buildDaysWhere(days) : undefined;
@@ -122,6 +127,14 @@ export async function GET(req: Request) {
     }
   }
 
+  // Count total matching courses
+  const total = await prisma.course.count({
+    where: {
+      ...courseWhere,
+      sections: { some: sectionWhere },
+    },
+  });
+
   // Find courses that have at least one section that matches filters
   const results = await prisma.course.findMany({
     where: {
@@ -145,7 +158,8 @@ export async function GET(req: Request) {
       },
     },
     orderBy: [{ subject: "asc" }, { number: "asc" }],
-    take: 50,
+    skip,
+    take: pageSize,
   });
 
   // Transform results to include geCodes from requirements
@@ -159,6 +173,10 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     count: transformedResults.length,
+    total,
+    page,
+    pageSize,
+    hasMore: skip + transformedResults.length < total,
     results: transformedResults,
   });
 }

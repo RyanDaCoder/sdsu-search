@@ -2,6 +2,7 @@
 
 import type { ScheduleItem } from "@/lib/schedule/types";
 import { minToTimeLabel } from "@/lib/search/time";
+import { useScheduleStore } from "@/lib/schedule/store";
 
 const DAYS: { key: string; label: string }[] = [
   { key: "M", label: "Mon" },
@@ -24,6 +25,8 @@ function splitDays(days: string | null | undefined) {
 }
 
 export function WeeklyGrid({ items }: { items: ScheduleItem[] }) {
+  const getConflicts = useScheduleStore((s) => s.getConflicts);
+
   // flatten meetings into blocks per-day
   const blocks = items.flatMap((it) =>
     (it.meetings ?? []).flatMap((m) => {
@@ -31,6 +34,8 @@ export function WeeklyGrid({ items }: { items: ScheduleItem[] }) {
       const end = m.endMin ?? null;
       if (start == null || end == null) return [];
       const days = splitDays(m.days);
+      const conflicts = getConflicts(it.sectionId);
+      const hasConflict = conflicts.length > 0;
       return days.map((d) => ({
         day: d,
         start,
@@ -38,6 +43,7 @@ export function WeeklyGrid({ items }: { items: ScheduleItem[] }) {
         label: it.courseCode,
         sub: `${minToTimeLabel(start)}–${minToTimeLabel(end)}`,
         sectionId: it.sectionId,
+        hasConflict,
       }));
     })
   );
@@ -83,12 +89,18 @@ export function WeeklyGrid({ items }: { items: ScheduleItem[] }) {
                   return (
                     <div
                       key={`${b.sectionId}-${b.day}-${b.start}`}
-                      className="absolute left-1 right-1 rounded-md border bg-background/90 p-1 text-xs shadow-sm overflow-hidden"
+                      className={`absolute left-1 right-1 rounded-md border p-1 text-xs shadow-sm overflow-hidden ${
+                        b.hasConflict
+                          ? "bg-red-100 border-red-300 text-red-900"
+                          : "bg-background/90"
+                      }`}
                       style={{ top, height }}
-                      title={`${b.label} ${b.sub}`}
+                      title={`${b.label} ${b.sub}${b.hasConflict ? " (CONFLICT)" : ""}`}
                     >
                       <div className="font-medium truncate">{b.label}</div>
-                      <div className="text-[11px] text-muted-foreground truncate">{b.sub}</div>
+                      <div className={`text-[11px] truncate ${b.hasConflict ? "text-red-700" : "text-muted-foreground"}`}>
+                        {b.sub}
+                      </div>
                     </div>
                   );
                 })}
