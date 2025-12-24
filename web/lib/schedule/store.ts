@@ -55,11 +55,10 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     const conflicts = findConflicts(items, item);
     if (conflicts.length > 0) {
       const msg = "That section conflicts with something already in your schedule.";
-      const newItems = [...items, item];
+      // Don't add the conflicting item - only update error and conflict map for existing items
       set({
         lastError: msg,
-        items: newItems,
-        conflictMap: computeConflictMap(newItems),
+        conflictMap: computeConflictMap(items),
       });
       return { ok: false, conflicts, message: msg };
     }

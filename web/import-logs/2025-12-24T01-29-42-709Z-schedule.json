@@ -1,0 +1,21 @@
+{
+  "timestamp": "2025-12-24T01:29:42.709Z",
+  "type": "schedule",
+  "termCode": "20251",
+  "rowsRead": 5,
+  "rowsWritten": 0,
+  "errors": [],
+  "warnings": [],
+  "created": {},
+  "updated": {},
+  "mappingFile": "C:\\Users\\ryanc\\projects\\sdsu-search\\web\\lib\\import\\config\\example.schedule.mapping.json",
+  "csvFile": "C:\\Users\\ryanc\\projects\\sdsu-search\\web\\scripts\\fixtures\\sample_schedule.csv",
+  "cliFlags": [
+    "--file",
+    "scripts/fixtures/sample_schedule.csv",
+    "--map",
+    "lib/import/config/example.schedule.mapping.json",
+    "--dry-run"
+  ],
+  "dryRun": true
+}

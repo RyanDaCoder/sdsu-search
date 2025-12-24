@@ -36,11 +36,20 @@ export default function SearchClient() {
   const [filters, setFilters] = useState<SearchFilters>(initialFilters);
   const [page, setPage] = useState(1);
 
+  // Track if we're syncing from URL (to prevent filter-change effect from resetting page)
+  const [isSyncingFromUrl, setIsSyncingFromUrl] = useState(false);
+
   // Sync state when user navigates back/forward
   useEffect(() => {
+    setIsSyncingFromUrl(true);
     setFilters(initialFilters);
     const pageParam = sp.get("page");
-    setPage(pageParam ? parseInt(pageParam, 10) || 1 : 1);
+    // Validate page number (must be >= 1, matching server validation)
+    const parsedPage = pageParam ? parseInt(pageParam, 10) : null;
+    const validPage = parsedPage && parsedPage >= 1 ? parsedPage : 1;
+    setPage(validPage);
+    // Reset flag after sync completes
+    setTimeout(() => setIsSyncingFromUrl(false), 0);
   }, [initialFilters, sp]);
 
   // Debounce only the "q" (keyword) field for fast UX
@@ -50,10 +59,25 @@ export default function SearchClient() {
     return { ...filters, q: debouncedQ || undefined };
   }, [filters, debouncedQ]);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change (compare values, not references)
+  // But skip if we're syncing from URL to preserve page number from history
   useEffect(() => {
-    setPage(1);
-  }, [filters.q, filters.subject, filters.number, filters.modality, filters.instructor, filters.days, filters.timeStart, filters.timeEnd, filters.ge]);
+    if (!isSyncingFromUrl) {
+      setPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Don't include isSyncingFromUrl in deps - we only check it, not react to its changes
+    filters.q,
+    filters.subject,
+    filters.number,
+    filters.modality,
+    filters.instructor,
+    filters.days?.join(","), // Compare array values, not reference
+    filters.timeStart,
+    filters.timeEnd,
+    filters.ge?.join(","), // Compare array values, not reference
+  ]);
 
   // Push filters into the URL (query params)
   useEffect(() => {
