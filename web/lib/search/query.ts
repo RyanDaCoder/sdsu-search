@@ -11,7 +11,7 @@ export function parseFiltersFromSearchParams(sp: URLSearchParams): SearchFilters
   const daysOne = sp.get("days");
 
   const days: DaysKey[] = [];
-  const validDays: DaysKey[] = ["MWF", "TT"];
+  const validDays: DaysKey[] = ["MWF", "TR"];
   const pushIfValid = (d: string) => {
     if (validDays.includes(d as DaysKey)) days.push(d as DaysKey);
   };

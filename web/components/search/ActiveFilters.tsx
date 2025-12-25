@@ -48,7 +48,7 @@ export default function ActiveFilters({ filters, setFilters }: ActiveFiltersProp
   if (filters.days && filters.days.length > 0) {
     const dayLabels: Record<string, string> = {
       MWF: "Mon/Wed/Fri",
-      TT: "Tue/Thu",
+      TR: "Tue/Thu",
     };
     
     filters.days.forEach((day) => {

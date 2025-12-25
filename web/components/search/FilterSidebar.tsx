@@ -156,7 +156,7 @@ export default function FilterSidebar({
           <div className="flex flex-wrap gap-3 text-sm" role="group" aria-label="Select day combinations">
             {[
               { key: "MWF" as DaysKey, label: "Mon/Wed/Fri" },
-              { key: "TT" as DaysKey, label: "Tue/Thu" },
+              { key: "TR" as DaysKey, label: "Tue/Thu" },
             ].map(({ key, label }) => (
               <label key={key} className="flex items-center gap-2 cursor-pointer group">
                 <input

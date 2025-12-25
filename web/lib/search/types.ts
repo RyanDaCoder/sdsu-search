@@ -1,5 +1,5 @@
-// Day filter options - only MWF and TT
-export type DaysKey = "MWF" | "TT";
+// Day filter options - only MWF and TR (R = Thursday)
+export type DaysKey = "MWF" | "TR";
 
 export type SearchFilters = {
   term?: string;
@@ -41,8 +41,13 @@ export type ApiTerm = {
 export type ApiSection = {
   id: string;
   sectionCode?: string | null;
+  classNumber?: string | null;
   status?: string | null;
   modality?: string | null;
+  capacity?: number | null;
+  enrolled?: number | null;
+  waitlist?: number | null;
+  campus?: string | null;
   term: ApiTerm;
   meetings: ApiMeeting[];
   instructors: ApiSectionInstructor[];
