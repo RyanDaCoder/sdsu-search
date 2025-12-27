@@ -12,6 +12,7 @@ export type SearchFilters = {
   modality?: string;
   instructor?: string;
   ge?: string[];
+  openSeatsOnly?: boolean;
 };
 
 export type ApiMeeting = {
@@ -21,6 +22,9 @@ export type ApiMeeting = {
   endMin: number;
   location?: string | null;
 };
+
+// Alias for use in schedule components
+export type Meeting = ApiMeeting;
 
 export type ApiInstructor = {
   id: string;
@@ -52,6 +56,9 @@ export type ApiSection = {
   meetings: ApiMeeting[];
   instructors: ApiSectionInstructor[];
 };
+
+// Alias for use in schedule components
+export type SearchSection = ApiSection;
 
 export type SearchCourse = {
   id: string;

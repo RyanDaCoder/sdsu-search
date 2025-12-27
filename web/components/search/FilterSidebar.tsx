@@ -255,6 +255,28 @@ export default function FilterSidebar({
         />
       </div>
 
+      {/* Open Seats Only */}
+      <div className="mb-5">
+        <fieldset>
+          <legend className="text-sm font-medium text-[#404040] mb-2">Availability</legend>
+          <label className="flex items-center gap-2 cursor-pointer group text-sm">
+            <input
+              type="checkbox"
+              className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
+              checked={filters.openSeatsOnly ?? false}
+              onChange={(e) => setFilters({ ...filters, openSeatsOnly: e.target.checked || undefined })}
+              aria-label="Show only sections with open seats"
+            />
+            <span className="text-[#171717] group-hover:text-[#8B1538] transition-colors">
+              Show only sections with open seats
+            </span>
+          </label>
+          <div className="text-xs text-[#737373] mt-2" role="note">
+            Only show sections where capacity - enrolled &gt; 0
+          </div>
+        </fieldset>
+      </div>
+
       {/* GE / Requirements */}
       <div className="mb-5">
         <fieldset>

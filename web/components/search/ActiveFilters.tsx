@@ -80,6 +80,15 @@ export default function ActiveFilters({ filters, setFilters }: ActiveFiltersProp
     });
   }
 
+  // Open seats only
+  if (filters.openSeatsOnly) {
+    activeFilters.push({
+      id: "openSeatsOnly",
+      label: "Open seats only",
+      onRemove: () => setFilters({ ...filters, openSeatsOnly: undefined }),
+    });
+  }
+
   // Modality
   if (filters.modality) {
     const modalityLabels: Record<string, string> = {

@@ -22,6 +22,9 @@ export function parseFiltersFromSearchParams(sp: URLSearchParams): SearchFilters
   // Parse multiple GE params
   const ge = sp.getAll("ge").filter(Boolean);
 
+  // Parse openSeatsOnly boolean
+  const openSeatsOnly = sp.get("openSeatsOnly") === "true";
+
   return {
     term: sp.get("term") ?? "20251",
     q: sp.get("q") ?? undefined,
@@ -33,6 +36,7 @@ export function parseFiltersFromSearchParams(sp: URLSearchParams): SearchFilters
     timeStart: toInt(sp.get("timeStart")),
     timeEnd: toInt(sp.get("timeEnd")),
     ge: ge.length > 0 ? ge : undefined,
+    openSeatsOnly: openSeatsOnly || undefined,
   };
 }
 
@@ -66,6 +70,11 @@ export function buildSearchParamsFromFilters(
     filters.ge.forEach((geCode) => {
       sp.append("ge", geCode);
     });
+  }
+
+  // Open seats only filter
+  if (filters.openSeatsOnly) {
+    sp.set("openSeatsOnly", "true");
   }
 
   // Pagination

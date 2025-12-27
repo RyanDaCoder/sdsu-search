@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { ScheduleItem, Conflict } from "./types";
 import { findConflicts } from "./conflicts";
+import { usePlansStore } from "./plans-store";
 
 type AddResult =
   | { ok: true }
@@ -17,6 +18,7 @@ type ScheduleState = {
   addSection: (item: ScheduleItem) => AddResult;
   removeSection: (sectionId: string) => void;
   clear: () => void;
+  syncWithCurrentPlan: () => void; // Sync items with current plan
 
   // derived helpers
   hasSection: (sectionId: string) => boolean;
@@ -69,18 +71,53 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       lastError: null,
       conflictMap: computeConflictMap(newItems),
     });
+    
+    // Sync with current plan
+    const currentPlan = usePlansStore.getState().getCurrentPlan();
+    if (currentPlan) {
+      usePlansStore.getState().updatePlan(currentPlan.id, newItems);
+    }
+    
     return { ok: true };
   },
 
   removeSection: (sectionId) => {
     set((s) => {
       const newItems = s.items.filter((x) => x.sectionId !== sectionId);
-      return {
+      const newState = {
         items: newItems,
         conflictMap: computeConflictMap(newItems),
       };
+      
+      // Sync with current plan
+      const currentPlan = usePlansStore.getState().getCurrentPlan();
+      if (currentPlan) {
+        usePlansStore.getState().updatePlan(currentPlan.id, newItems);
+      }
+      
+      return newState;
     });
   },
 
-  clear: () => set({ items: [], lastError: null, conflictMap: new Map() }),
+  clear: () => {
+    set({ items: [], lastError: null, conflictMap: new Map() });
+    
+    // Sync with current plan
+    const currentPlan = usePlansStore.getState().getCurrentPlan();
+    if (currentPlan) {
+      usePlansStore.getState().updatePlan(currentPlan.id, []);
+    }
+  },
+
+  syncWithCurrentPlan: () => {
+    const currentPlan = usePlansStore.getState().getCurrentPlan();
+    if (currentPlan) {
+      const items = currentPlan.items;
+      set({
+        items,
+        lastError: null,
+        conflictMap: computeConflictMap(items),
+      });
+    }
+  },
 }));

@@ -86,6 +86,7 @@ export default function SearchClient() {
     filters.timeStart,
     filters.timeEnd,
     filters.ge?.join(","), // Compare array values, not reference
+    filters.openSeatsOnly, // Include openSeatsOnly filter
   ]);
 
   // Push filters into the URL (query params)
