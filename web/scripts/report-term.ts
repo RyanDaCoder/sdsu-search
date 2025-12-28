@@ -88,7 +88,7 @@ async function main() {
   // Find issues
   const issues: Array<{ type: string; section: string; course: string; message: string }> = [];
 
-  // Sections with zero meetings
+  // Sections with zero meetings (but ignore ONLINE_ASYNC and sections with TBA meetings)
   const sectionsWithNoMeetings = await prisma.section.findMany({
     where: {
       termId: term.id,
@@ -100,6 +100,11 @@ async function main() {
   });
 
   sectionsWithNoMeetings.forEach((section) => {
+    // Skip if modality is ONLINE_ASYNC (async courses don't need scheduled meetings)
+    if (section.modality === Modality.ONLINE_ASYNC) {
+      return;
+    }
+
     issues.push({
       type: "zero-meetings",
       section: section.classNumber || section.sectionCode || "unknown",
@@ -140,12 +145,13 @@ async function main() {
     // Check for invalid day codes
     if (meeting.days && meeting.days !== "TBA") {
       const allowedDays = new Set(["M", "T", "W", "R", "F", "S", "U"]);
-      const allowedCombos = new Set(["M", "T", "W", "R", "F", "S", "U", "MW", "TR", "MWF"]);
       const chars = meeting.days.split("");
+      // Check that all characters are valid day codes and no duplicates
+      const uniqueChars = new Set(chars);
       const hasInvalidChar = chars.some((char) => !allowedDays.has(char));
-      const isInvalidCombo = !allowedCombos.has(meeting.days);
+      const hasDuplicates = uniqueChars.size !== chars.length;
 
-      if (hasInvalidChar || isInvalidCombo) {
+      if (hasInvalidChar || hasDuplicates || chars.length === 0) {
         issues.push({
           type: "invalid-days",
           section: meeting.section.classNumber || meeting.section.sectionCode || "unknown",
@@ -157,24 +163,22 @@ async function main() {
   });
 
   // Sections with UNKNOWN modality/status
-  const sectionsWithUnknown = await prisma.section.findMany({
+  // Note: UNKNOWN status is expected for data sources that don't provide seat availability
+  // Only report UNKNOWN modality as a potential issue, not status
+  const sectionsWithUnknownModality = await prisma.section.findMany({
     where: {
       termId: term.id,
-      OR: [{ modality: Modality.UNKNOWN }, { status: SectionStatus.UNKNOWN }],
+      modality: Modality.UNKNOWN,
     },
     include: { course: true },
   });
 
-  sectionsWithUnknown.forEach((section) => {
-    const problems: string[] = [];
-    if (section.modality === Modality.UNKNOWN) problems.push("modality UNKNOWN");
-    if (section.status === SectionStatus.UNKNOWN) problems.push("status UNKNOWN");
-
+  sectionsWithUnknownModality.forEach((section) => {
     issues.push({
       type: "unknown-enum",
       section: section.classNumber || section.sectionCode || "unknown",
       course: `${section.course.subject} ${section.course.number}`,
-      message: problems.join(", "),
+      message: "modality UNKNOWN",
     });
   });
 

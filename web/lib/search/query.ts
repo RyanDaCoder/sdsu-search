@@ -26,7 +26,7 @@ export function parseFiltersFromSearchParams(sp: URLSearchParams): SearchFilters
   const openSeatsOnly = sp.get("openSeatsOnly") === "true";
 
   return {
-    term: sp.get("term") ?? "20251",
+    term: sp.get("term") ?? "GROSSMONT_2026SP",
     q: sp.get("q") ?? undefined,
     subject: sp.get("subject") ?? undefined,
     number: sp.get("number") ?? undefined,
@@ -47,7 +47,7 @@ export function buildSearchParamsFromFilters(
 ): URLSearchParams {
   const sp = new URLSearchParams();
 
-  sp.set("term", filters.term ?? "20251");
+  sp.set("term", filters.term ?? "GROSSMONT_2026SP");
 
   if (filters.q) sp.set("q", filters.q);
   if (filters.subject) sp.set("subject", filters.subject);

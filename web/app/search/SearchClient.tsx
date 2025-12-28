@@ -19,7 +19,14 @@ import KeyboardShortcutsModal from "../../components/ui/KeyboardShortcutsModal";
 import { useToastStore } from "@/lib/toast/store";
 
 // Lazy load schedule panel for better initial page load
-const SchedulePanel = lazy(() => import("@/components/schedule/SchedulePanel").then(m => ({ default: m.SchedulePanel })));
+const SchedulePanel = lazy(() => 
+  import("@/components/schedule/SchedulePanel").then(m => {
+    if (m.SchedulePanel) {
+      return { default: m.SchedulePanel };
+    }
+    throw new Error("SchedulePanel export not found in module");
+  })
+);
 
 const PAGE_SIZE = 20;
 
@@ -46,11 +53,12 @@ export default function SearchClient() {
   const addToast = useToastStore((s) => s.addToast);
 
   // Track if we're syncing from URL (to prevent filter-change effect from resetting page)
-  const [isSyncingFromUrl, setIsSyncingFromUrl] = useState(false);
+  // Use ref to avoid dependency issues - we check the value but don't need to react to changes
+  const isSyncingFromUrlRef = useRef(false);
 
   // Sync state when user navigates back/forward
   useEffect(() => {
-    setIsSyncingFromUrl(true);
+    isSyncingFromUrlRef.current = true;
     setFilters(initialFilters);
     const pageParam = sp.get("page");
     // Validate page number (must be >= 1, matching server validation)
@@ -58,7 +66,9 @@ export default function SearchClient() {
     const validPage = parsedPage && parsedPage >= 1 ? parsedPage : 1;
     setPage(validPage);
     // Reset flag after sync completes
-    setTimeout(() => setIsSyncingFromUrl(false), 0);
+    setTimeout(() => {
+      isSyncingFromUrlRef.current = false;
+    }, 0);
   }, [initialFilters, sp]);
 
   // Debounce only the "q" (keyword) field for fast UX
@@ -71,12 +81,12 @@ export default function SearchClient() {
   // Reset to page 1 when filters change (compare values, not references)
   // But skip if we're syncing from URL to preserve page number from history
   useEffect(() => {
-    if (!isSyncingFromUrl) {
+    if (!isSyncingFromUrlRef.current) {
       setPage(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    // Don't include isSyncingFromUrl in deps - we only check it, not react to its changes
+    filters.term, // Reset page when term changes
     filters.q,
     filters.subject,
     filters.number,
@@ -86,7 +96,7 @@ export default function SearchClient() {
     filters.timeStart,
     filters.timeEnd,
     filters.ge?.join(","), // Compare array values, not reference
-    filters.openSeatsOnly, // Include openSeatsOnly filter
+    filters.openSeatsOnly,
   ]);
 
   // Push filters into the URL (query params)
@@ -251,11 +261,12 @@ export default function SearchClient() {
                 filters.modality ||
                 filters.instructor ||
                 filters.ge?.length ||
-                (filters.term && filters.term !== "20251")
+                filters.openSeatsOnly ||
+                (filters.term && filters.term !== "GROSSMONT_2026SP")
               );
 
               setFilters({
-                term: filters.term ?? "20251", // keep default term
+                term: filters.term ?? "GROSSMONT_2026SP", // keep default term
               });
               setPage(1);
 

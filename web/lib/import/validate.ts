@@ -21,27 +21,17 @@ export type ValidationResult<T> = {
 
 // Allowed day codes (canonical format)
 const ALLOWED_DAYS = new Set(["M", "T", "W", "R", "F", "S", "U"]);
-const ALLOWED_DAY_COMBINATIONS = new Set([
-  "M",
-  "T",
-  "W",
-  "R",
-  "F",
-  "S",
-  "U",
-  "MW",
-  "TR",
-  "MWF",
-  "TBA",
-]);
 
 /**
  * Validate a day string contains only allowed day codes.
+ * Accepts any combination of valid day characters (e.g., "MTW", "WF", "MT", "MWF", etc.)
  */
 function isValidDayString(days: string): boolean {
   if (days === "TBA") return true;
   const chars = days.split("");
-  return chars.every((char) => ALLOWED_DAYS.has(char)) && ALLOWED_DAY_COMBINATIONS.has(days);
+  // Check that all characters are valid day codes and no duplicates
+  const uniqueChars = new Set(chars);
+  return chars.length > 0 && chars.every((char) => ALLOWED_DAYS.has(char)) && uniqueChars.size === chars.length;
 }
 
 /**
@@ -126,7 +116,7 @@ export function validateScheduleRows(
             type: "error",
             rowIndex: i,
             field: `meetings[${j}].days`,
-            message: `Invalid day code: ${meeting.days}. Must be one of: M, T, W, R, F, S, U, MW, TR, MWF, TBA`,
+            message: `Invalid day code: ${meeting.days}. Must be a combination of: M, T, W, R, F, S, U, or TBA`,
             value: meeting.days,
           });
         }

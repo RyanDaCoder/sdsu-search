@@ -28,7 +28,7 @@ function CourseCard({ course }: { course: SearchCourse }) {
           <div className="flex items-center gap-3 mb-1.5">
             <div className="font-semibold text-lg text-[#2C2C2C]">{header.code}</div>
             <button
-              className="text-xs text-[#8B1538] hover:text-[#6B1029] underline font-medium transition-colors"
+              className="text-xs text-[#00685E] hover:text-[#004D45] underline font-medium transition-colors"
               onClick={() => setShowDetails(true)}
             >
               Details
@@ -43,7 +43,7 @@ function CourseCard({ course }: { course: SearchCourse }) {
               {course.geCodes.map((geCode) => (
                 <span
                   key={geCode}
-                  className="inline-block rounded-full bg-[#8B1538]/10 text-[#8B1538] px-2.5 py-1 text-xs font-medium border border-[#8B1538]/20"
+                  className="inline-block rounded-full bg-[#00685E]/10 text-[#00685E] px-2.5 py-1 text-xs font-medium border border-[#00685E]/20"
                 >
                   {geCode}
                 </span>
@@ -53,7 +53,7 @@ function CourseCard({ course }: { course: SearchCourse }) {
         </div>
 
         <button
-          className="text-sm text-[#8B1538] hover:text-[#6B1029] underline font-medium transition-colors whitespace-nowrap"
+          className="text-sm text-[#00685E] hover:text-[#004D45] underline font-medium transition-colors whitespace-nowrap"
           onClick={() => setOpen((v) => !v)}
         >
           {open ? "Hide sections" : `Show sections (${course.sections.length})`}
@@ -83,7 +83,7 @@ function CourseCard({ course }: { course: SearchCourse }) {
 
                   <button
                     type="button"
-                    className="rounded-md border border-[#D4D4D4] bg-white px-4 py-2.5 sm:px-3 sm:py-1.5 text-sm font-medium text-[#8B1538] hover:bg-[#8B1538] hover:text-white hover:border-[#8B1538] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-[#8B1538] transition-colors touch-manipulation"
+                    className="rounded-md border border-[#D4D4D4] bg-white px-4 py-2.5 sm:px-3 sm:py-1.5 text-sm font-medium text-[#00685E] hover:bg-[#00685E] hover:text-white hover:border-[#00685E] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-[#00685E] transition-colors touch-manipulation"
                     disabled={added}
                     onClick={() => {
                       const courseCode = `${course.subject} ${course.number}`;
@@ -160,11 +160,16 @@ function sectionsEqual(prev: SearchCourse["sections"], next: SearchCourse["secti
     const nextSection = nextMap.get(sectionId);
     if (!nextSection) return false;
     
-    // Compare section properties that are displayed or used in CourseCard
+    // Compare section properties that are displayed or used in CourseCard/CourseDetailsModal
     if (
       prevSection.sectionCode !== nextSection.sectionCode ||
+      prevSection.classNumber !== nextSection.classNumber ||
       prevSection.modality !== nextSection.modality ||
       prevSection.status !== nextSection.status ||
+      prevSection.capacity !== nextSection.capacity ||
+      prevSection.enrolled !== nextSection.enrolled ||
+      prevSection.waitlist !== nextSection.waitlist ||
+      prevSection.campus !== nextSection.campus ||
       prevSection.term?.code !== nextSection.term?.code ||
       prevSection.term?.name !== nextSection.term?.name
     ) {

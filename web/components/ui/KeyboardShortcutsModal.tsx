@@ -126,7 +126,7 @@ export default function KeyboardShortcutsModal({
         <div className="sticky bottom-0 bg-white border-t border-[#E5E5E5] p-4">
           <button
             onClick={onClose}
-            className="w-full rounded-md border border-[#D4D4D4] bg-white px-4 py-2.5 text-sm font-medium text-[#8B1538] hover:bg-[#8B1538] hover:text-white hover:border-[#8B1538] transition-colors touch-manipulation"
+            className="w-full rounded-md border border-[#D4D4D4] bg-white px-4 py-2.5 text-sm font-medium text-[#00685E] hover:bg-[#00685E] hover:text-white hover:border-[#00685E] transition-colors touch-manipulation"
           >
             Close
           </button>

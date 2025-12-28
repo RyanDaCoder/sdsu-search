@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "seed": "tsx prisma/seed.ts",
     "import:schedule": "tsx scripts/import-schedule.ts",
     "import:requirements": "tsx scripts/import-requirements.ts",
     "import:all": "tsx scripts/import-all.ts",
+    "import:grossmont": "tsx scripts/import-grossmont-pdf.ts",
     "report:term": "tsx scripts/report-term.ts"
   },
   "dependencies": {

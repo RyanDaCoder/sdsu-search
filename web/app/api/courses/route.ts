@@ -28,7 +28,7 @@ function buildDaysWhere(days: string) {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
 
-  const termCode = searchParams.get("term") ?? "20251";
+  const termCode = searchParams.get("term") ?? "GROSSMONT_2026SP";
 
   const q = (searchParams.get("q") ?? "").trim();
   const subject = (searchParams.get("subject") ?? "").trim().toUpperCase();

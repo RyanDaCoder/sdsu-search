@@ -1,18 +1,23 @@
 @import "tailwindcss";
 
-/* SDSU Brand Colors - Aztec Red + Charcoal + Neutrals */
+/* Grossmont College Brand Colors - Grossmont Green + Gold + Neutrals */
 :root {
   --background: #ffffff;
   --foreground: #1a1a1a;
   
-  /* SDSU Primary: Aztec Red (deep red, not bright) */
-  --sdsu-red: #8B1538;
-  --sdsu-red-dark: #6B1029;
-  --sdsu-red-light: #A01A45;
+  /* Grossmont Primary: Grossmont Green */
+  --grossmont-green: #00685E;
+  --grossmont-green-dark: #004D45;
+  --grossmont-green-light: #008A7A;
   
-  /* SDSU Secondary: Dark Charcoal */
-  --sdsu-charcoal: #2C2C2C;
-  --sdsu-charcoal-light: #3A3A3A;
+  /* Grossmont Secondary: Grossmont Gold */
+  --grossmont-gold: #EA9610;
+  --grossmont-gold-dark: #C77A0D;
+  --grossmont-gold-light: #F5B042;
+  
+  /* Dark Charcoal */
+  --charcoal: #2C2C2C;
+  --charcoal-light: #3A3A3A;
   
   /* Neutral Grays */
   --gray-50: #F9F9F9;
@@ -58,12 +63,12 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   line-height: 1.2;
-  color: var(--sdsu-charcoal);
+  color: var(--charcoal);
 }
 
 /* Focus states for accessibility */
 *:focus-visible {
-  outline: 2px solid var(--sdsu-red);
+  outline: 2px solid var(--grossmont-green);
   outline-offset: 2px;
 }
 

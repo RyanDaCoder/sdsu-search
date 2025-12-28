@@ -129,11 +129,11 @@ export default function ActiveFilters({ filters, setFilters }: ActiveFiltersProp
   }
 
   // Don't show term filter if it's the default
-  if (filters.term && filters.term !== "20251") {
+  if (filters.term && filters.term !== "GROSSMONT_2026SP") {
     activeFilters.push({
       id: "term",
       label: `Term: ${filters.term}`,
-      onRemove: () => setFilters({ ...filters, term: "20251" }),
+      onRemove: () => setFilters({ ...filters, term: "GROSSMONT_2026SP" }),
     });
   }
 
@@ -153,7 +153,7 @@ export default function ActiveFilters({ filters, setFilters }: ActiveFiltersProp
           <button
             key={filter.id}
             onClick={filter.onRemove}
-            className="group inline-flex items-center gap-1.5 rounded-full bg-[#8B1538]/10 text-[#8B1538] px-3 py-1.5 text-xs font-medium border border-[#8B1538]/20 hover:bg-[#8B1538] hover:text-white hover:border-[#8B1538] transition-colors touch-manipulation"
+            className="group inline-flex items-center gap-1.5 rounded-full bg-[#00685E]/10 text-[#00685E] px-3 py-1.5 text-xs font-medium border border-[#00685E]/20 hover:bg-[#00685E] hover:text-white hover:border-[#00685E] transition-colors touch-manipulation"
             aria-label={`Remove filter: ${filter.label}`}
           >
             <span>{filter.label}</span>

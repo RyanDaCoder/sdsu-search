@@ -12,17 +12,18 @@ function parseIntOrNull(v: string | null) {
 }
 
 // days filter helper: 
-// - Single day (M, T, W, R, F): exact match only (e.g., "M" matches only "M", not "MWF")
+// - All day filters use contains logic for consistency
+// - Single day (M, T, W, R, F): contains the day (e.g., "M" matches "M", "MWF", "MW", etc.)
 // - Combinations (MW, TR, MWF, etc.): contains all selected days (e.g., "MWF" matches "MWF" or "MWFR")
 function buildDaysWhere(days: string) {
   // normalize like "mwf" -> "MWF"
   const normalized = days.toUpperCase().replace(/[^MTWRFS]/g, "");
   if (!normalized) return undefined;
 
-  // Single letter = exact match (e.g., "M" should only match "M", not "MWF")
+  // Single letter = contains match (e.g., "M" matches "M", "MWF", "MW", etc.)
   if (normalized.length === 1) {
     return {
-      days: normalized,
+      days: { contains: normalized },
     };
   }
 
@@ -38,7 +39,7 @@ function buildDaysWhere(days: string) {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
 
-  const termCode = searchParams.get("term") ?? "20251";
+  const termCode = searchParams.get("term") ?? "GROSSMONT_2026SP";
 
   const q = (searchParams.get("q") ?? "").trim();
   const subject = (searchParams.get("subject") ?? "").trim().toUpperCase();

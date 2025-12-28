@@ -123,7 +123,7 @@ export default function CourseDetailsModal({ course, isOpen, onClose }: CourseDe
                     {course.geCodes.map((geCode) => (
                       <span
                         key={geCode}
-                        className="inline-block rounded-full bg-[#8B1538]/10 text-[#8B1538] px-2.5 py-1 text-xs font-medium border border-[#8B1538]/20"
+                        className="inline-block rounded-full bg-[#00685E]/10 text-[#00685E] px-2.5 py-1 text-xs font-medium border border-[#00685E]/20"
                       >
                         {geCode}
                       </span>
@@ -278,7 +278,7 @@ export default function CourseDetailsModal({ course, isOpen, onClose }: CourseDe
         <div className="sticky bottom-0 bg-white border-t border-[#E5E5E5] p-4">
           <button
             onClick={onClose}
-            className="w-full rounded-md border border-[#D4D4D4] bg-white px-4 py-2.5 text-sm font-medium text-[#8B1538] hover:bg-[#8B1538] hover:text-white hover:border-[#8B1538] transition-colors"
+            className="w-full rounded-md border border-[#D4D4D4] bg-white px-4 py-2.5 text-sm font-medium text-[#00685E] hover:bg-[#00685E] hover:text-white hover:border-[#00685E] transition-colors"
           >
             Close
           </button>

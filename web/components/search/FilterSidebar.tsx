@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type { RefObject } from "react";
+import useSWR from "swr";
 import type { SearchFilters, DaysKey } from "@/lib/search/types";
 import { minToTimeInput, timeInputToMin } from "@/lib/search/time";
 
@@ -19,25 +20,16 @@ function toggleGe(geCodes: string[] | undefined, geCode: string): string[] {
   return Array.from(set);
 }
 
-// SDSU-like GE codes (matching seed data)
-const GE_CODES = [
-  "GE-I-ORAL",
-  "GE-I-WRITTEN",
-  "GE-I-CRIT",
-  "GE-IIA-PHYS",
-  "GE-IIA-LIFE",
-  "GE-IIA-LAB",
-  "GE-IIA-MATH",
-  "GE-IIB",
-  "GE-IIC-ARTS",
-  "GE-IIC-HUM",
-  "GE-III",
-  "GE-IVA",
-  "GE-IVB",
-  "GE-IVC",
-  "GE-IV-CULTDIV",
-  "GE-V-ETHNIC",
-];
+type RequirementsResponse = {
+  term: string;
+  requirements: Array<{
+    code: string;
+    name: string;
+    description?: string | null;
+  }>;
+};
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function FilterSidebar({
   filters,
@@ -50,6 +42,23 @@ export default function FilterSidebar({
   onClose?: () => void;
   keywordInputRef?: RefObject<HTMLInputElement | null>;
 }) {
+  // Fetch requirements for the current term
+  const termCode = filters.term ?? "20251";
+  const { data: requirementsData, error: requirementsError, isLoading: requirementsLoading } = useSWR<RequirementsResponse>(
+    `/api/requirements?term=${encodeURIComponent(termCode)}`,
+    fetcher,
+    {
+      keepPreviousData: true,
+      dedupingInterval: 60000, // Cache for 1 minute
+    }
+  );
+
+  // Extract requirement codes from the API response
+  const availableRequirements = useMemo(() => {
+    if (!requirementsData?.requirements) return [];
+    return requirementsData.requirements.map((r) => r.code);
+  }, [requirementsData]);
+
   // Handle Esc key to close drawer
   useEffect(() => {
     if (!onClose) return;
@@ -90,13 +99,13 @@ export default function FilterSidebar({
         <input
           id="filter-term"
           type="text"
-          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:outline-none transition-colors touch-manipulation"
-          placeholder="e.g. 20251"
-          value={filters.term ?? "20251"}
-          onChange={(e) => setFilters({ ...filters, term: e.target.value || "20251" })}
+          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
+          placeholder="e.g. GROSSMONT_2026SP"
+          value={filters.term ?? "GROSSMONT_2026SP"}
+          onChange={(e) => setFilters({ ...filters, term: e.target.value || "GROSSMONT_2026SP" })}
           aria-describedby="term-help"
         />
-        <div id="term-help" className="text-xs text-[#737373] mt-1.5">Default: 20251 (Spring 2026)</div>
+        <div id="term-help" className="text-xs text-[#737373] mt-1.5">Default: GROSSMONT_2026SP (Spring 2026)</div>
       </div>
 
       {/* Keyword (q) */}
@@ -108,7 +117,7 @@ export default function FilterSidebar({
           id="filter-keyword"
           ref={keywordInputRef}
           type="search"
-          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:outline-none transition-colors touch-manipulation"
+          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
           placeholder='e.g. "algorithms", "writing", "film"'
           value={filters.q ?? ""}
           onChange={(e) => setFilters({ ...filters, q: e.target.value || undefined })}
@@ -125,7 +134,7 @@ export default function FilterSidebar({
         <input
           id="filter-subject"
           type="text"
-          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:outline-none transition-colors touch-manipulation"
+          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
           placeholder="e.g. CS, MATH, ENS"
           value={filters.subject ?? ""}
           onChange={(e) =>
@@ -142,7 +151,7 @@ export default function FilterSidebar({
         <input
           id="filter-number"
           type="text"
-          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:outline-none transition-colors touch-manipulation"
+          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
           placeholder="e.g. 210, 250"
           value={filters.number ?? ""}
           onChange={(e) => setFilters({ ...filters, number: e.target.value || undefined })}
@@ -161,12 +170,12 @@ export default function FilterSidebar({
               <label key={key} className="flex items-center gap-2 cursor-pointer group">
                 <input
                   type="checkbox"
-                  className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
+                  className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
                   checked={(filters.days ?? []).includes(key)}
                   onChange={() => setFilters({ ...filters, days: toggleDay(filters.days, key) })}
                   aria-label={label}
                 />
-                <span className="text-[#171717] group-hover:text-[#8B1538] transition-colors whitespace-nowrap">
+                <span className="text-[#171717] group-hover:text-[#00685E] transition-colors whitespace-nowrap">
                   {label}
                 </span>
               </label>
@@ -190,7 +199,7 @@ export default function FilterSidebar({
               <input
                 id="filter-time-start"
                 type="time"
-                className="w-full rounded-md border border-[#D4D4D4] px-2 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:outline-none transition-colors touch-manipulation"
+                className="w-full rounded-md border border-[#D4D4D4] px-2 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
                 value={minToTimeInput(filters.timeStart)}
                 onChange={(e) =>
                   setFilters({ ...filters, timeStart: timeInputToMin(e.target.value) })
@@ -205,7 +214,7 @@ export default function FilterSidebar({
               <input
                 id="filter-time-end"
                 type="time"
-                className="w-full rounded-md border border-[#D4D4D4] px-2 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:outline-none transition-colors touch-manipulation"
+                className="w-full rounded-md border border-[#D4D4D4] px-2 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
                 value={minToTimeInput(filters.timeEnd)}
                 onChange={(e) =>
                   setFilters({ ...filters, timeEnd: timeInputToMin(e.target.value) })
@@ -227,7 +236,7 @@ export default function FilterSidebar({
         </label>
         <select
           id="filter-modality"
-          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:outline-none transition-colors cursor-pointer touch-manipulation"
+          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors cursor-pointer touch-manipulation"
           value={filters.modality ?? ""}
           onChange={(e) => setFilters({ ...filters, modality: e.target.value || undefined })}
         >
@@ -248,7 +257,7 @@ export default function FilterSidebar({
         <input
           id="filter-instructor"
           type="text"
-          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:outline-none transition-colors touch-manipulation"
+          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
           placeholder='e.g. "Palacios", "Smith"'
           value={filters.instructor ?? ""}
           onChange={(e) => setFilters({ ...filters, instructor: e.target.value || undefined })}
@@ -262,12 +271,12 @@ export default function FilterSidebar({
           <label className="flex items-center gap-2 cursor-pointer group text-sm">
             <input
               type="checkbox"
-              className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
+              className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
               checked={filters.openSeatsOnly ?? false}
               onChange={(e) => setFilters({ ...filters, openSeatsOnly: e.target.checked || undefined })}
               aria-label="Show only sections with open seats"
             />
-            <span className="text-[#171717] group-hover:text-[#8B1538] transition-colors">
+            <span className="text-[#171717] group-hover:text-[#00685E] transition-colors">
               Show only sections with open seats
             </span>
           </label>
@@ -286,32 +295,55 @@ export default function FilterSidebar({
               <button
                 type="button"
                 onClick={() => setFilters({ ...filters, ge: undefined })}
-                className="text-xs text-[#8B1538] hover:text-[#6B1029] underline font-medium transition-colors touch-manipulation"
+                className="text-xs text-[#00685E] hover:text-[#004D45] underline font-medium transition-colors touch-manipulation"
                 aria-label="Clear all GE requirements"
               >
                 Clear
               </button>
             )}
           </div>
-          <div className="space-y-2 text-sm max-h-64 overflow-y-auto pr-1" role="group" aria-label="GE requirements">
-            {GE_CODES.map((geCode) => (
-              <label key={geCode} className="flex items-center gap-2 cursor-pointer group py-0.5">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#8B1538] focus:ring-2 focus:ring-[#8B1538]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
-                  checked={(filters.ge ?? []).includes(geCode)}
-                  onChange={() =>
-                    setFilters({ ...filters, ge: toggleGe(filters.ge, geCode) })
-                  }
-                  aria-label={`Select ${geCode}`}
-                />
-                <span className="text-[#171717] group-hover:text-[#8B1538] transition-colors">{geCode}</span>
-              </label>
-            ))}
-          </div>
-          <div className="text-xs text-[#737373] mt-2" role="note">
-            Select multiple to find courses matching ANY selected requirement.
-          </div>
+          {requirementsLoading && (
+            <div className="text-xs text-[#737373] py-2">Loading requirements...</div>
+          )}
+          {requirementsError && (
+            <div className="text-xs text-red-600 py-2">
+              Failed to load requirements. Showing empty list.
+            </div>
+          )}
+          {!requirementsLoading && !requirementsError && availableRequirements.length === 0 && (
+            <div className="text-xs text-[#737373] py-2">
+              No requirements available for this term.
+            </div>
+          )}
+          {!requirementsLoading && availableRequirements.length > 0 && (
+            <>
+              <div className="space-y-2 text-sm max-h-64 overflow-y-auto pr-1" role="group" aria-label="GE requirements">
+                {availableRequirements.map((geCode) => {
+                  const requirement = requirementsData?.requirements.find((r) => r.code === geCode);
+                  const displayName = requirement?.name || geCode;
+                  return (
+                    <label key={geCode} className="flex items-center gap-2 cursor-pointer group py-0.5">
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
+                        checked={(filters.ge ?? []).includes(geCode)}
+                        onChange={() =>
+                          setFilters({ ...filters, ge: toggleGe(filters.ge, geCode) })
+                        }
+                        aria-label={`Select ${displayName}`}
+                      />
+                      <span className="text-[#171717] group-hover:text-[#00685E] transition-colors" title={requirement?.description || undefined}>
+                        {displayName}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="text-xs text-[#737373] mt-2" role="note">
+                Select multiple to find courses matching ANY selected requirement.
+              </div>
+            </>
+          )}
         </fieldset>
       </div>
     </aside>
