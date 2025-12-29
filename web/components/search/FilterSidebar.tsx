@@ -1,10 +1,91 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
 import useSWR from "swr";
 import type { SearchFilters, DaysKey } from "@/lib/search/types";
-import { minToTimeInput, timeInputToMin } from "@/lib/search/time";
+import { parseTimeString, minToTimeString } from "@/lib/search/time";
+
+function TimeInput({
+  id,
+  value,
+  onChange,
+  "aria-label": ariaLabel,
+}: {
+  id: string;
+  value: number | undefined;
+  onChange: (value: number | undefined) => void;
+  "aria-label"?: string;
+}) {
+  const [inputValue, setInputValue] = useState<string>(() => {
+    return value !== undefined ? minToTimeString(value) : "";
+  });
+  const [isInvalid, setIsInvalid] = useState(false);
+
+  // Sync with external value changes (only when cleared externally)
+  useEffect(() => {
+    if (value === undefined && inputValue !== "") {
+      setInputValue("");
+      setIsInvalid(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+
+    if (!newValue.trim()) {
+      // Empty input - clear the filter
+      setIsInvalid(false);
+      onChange(undefined);
+      return;
+    }
+
+    const parsed = parseTimeString(newValue);
+    if (parsed !== undefined) {
+      setIsInvalid(false);
+      onChange(parsed);
+    } else {
+      setIsInvalid(true);
+      // Don't clear the filter on invalid input - let user keep typing
+    }
+  };
+
+  const handleBlur = () => {
+    // On blur, if invalid, clear the input and filter
+    if (isInvalid) {
+      setInputValue("");
+      setIsInvalid(false);
+      onChange(undefined);
+    }
+  };
+
+  return (
+    <div>
+      <input
+        id={id}
+        type="text"
+        className={`w-full rounded-md border px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation ${
+          isInvalid
+            ? "border-red-500 focus:border-red-500"
+            : "border-[#D4D4D4] focus:border-[#00685E]"
+        }`}
+        value={inputValue}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder="e.g. 945, 1345"
+        aria-label={ariaLabel}
+        aria-invalid={isInvalid}
+      />
+      {isInvalid && (
+        <div className="text-xs text-red-600 mt-1">
+          Invalid time format
+        </div>
+      )}
+    </div>
+  );
+}
 
 function toggleDay(days: DaysKey[] | undefined, day: DaysKey): DaysKey[] {
   const set = new Set(days ?? []);
@@ -43,7 +124,7 @@ export default function FilterSidebar({
   keywordInputRef?: RefObject<HTMLInputElement | null>;
 }) {
   // Fetch requirements for the current term
-  const termCode = filters.term ?? "20251";
+  const termCode = filters.term ?? "GROSSMONT_2026SP";
   const { data: requirementsData, error: requirementsError, isLoading: requirementsLoading } = useSWR<RequirementsResponse>(
     `/api/requirements?term=${encodeURIComponent(termCode)}`,
     fetcher,
@@ -162,27 +243,57 @@ export default function FilterSidebar({
       <div className="mb-5">
         <fieldset>
           <legend className="text-sm font-medium text-[#404040] mb-2">Days</legend>
-          <div className="flex flex-wrap gap-3 text-sm" role="group" aria-label="Select day combinations">
-            {[
-              { key: "MWF" as DaysKey, label: "Mon/Wed/Fri" },
-              { key: "TR" as DaysKey, label: "Tue/Thu" },
-            ].map(({ key, label }) => (
-              <label key={key} className="flex items-center gap-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
-                  checked={(filters.days ?? []).includes(key)}
-                  onChange={() => setFilters({ ...filters, days: toggleDay(filters.days, key) })}
-                  aria-label={label}
-                />
-                <span className="text-[#171717] group-hover:text-[#00685E] transition-colors whitespace-nowrap">
-                  {label}
-                </span>
-              </label>
-            ))}
+          <div className="space-y-2">
+            {/* Single days */}
+            <div className="flex flex-wrap gap-3 text-sm" role="group" aria-label="Single days">
+              {[
+                { key: "M" as DaysKey, label: "Mon" },
+                { key: "T" as DaysKey, label: "Tue" },
+                { key: "W" as DaysKey, label: "Wed" },
+                { key: "R" as DaysKey, label: "Thu" },
+                { key: "F" as DaysKey, label: "Fri" },
+              ].map(({ key, label }) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
+                    checked={(filters.days ?? []).includes(key)}
+                    onChange={() => setFilters({ ...filters, days: toggleDay(filters.days, key) })}
+                    aria-label={label}
+                  />
+                  <span className="text-[#171717] group-hover:text-[#00685E] transition-colors whitespace-nowrap">
+                    {label}
+                  </span>
+                </label>
+              ))}
+            </div>
+            {/* Common combinations */}
+            <div className="flex flex-wrap gap-3 text-sm" role="group" aria-label="Day combinations">
+              {[
+                { key: "MW" as DaysKey, label: "Mon/Wed" },
+                { key: "TR" as DaysKey, label: "Tue/Thu" },
+                { key: "MWF" as DaysKey, label: "Mon/Wed/Fri" },
+                { key: "TWR" as DaysKey, label: "Tue/Wed/Thu" },
+                { key: "MTWR" as DaysKey, label: "Mon-Thu" },
+                { key: "MTWRF" as DaysKey, label: "Mon-Fri" },
+              ].map(({ key, label }) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
+                    checked={(filters.days ?? []).includes(key)}
+                    onChange={() => setFilters({ ...filters, days: toggleDay(filters.days, key) })}
+                    aria-label={label}
+                  />
+                  <span className="text-[#171717] group-hover:text-[#00685E] transition-colors whitespace-nowrap">
+                    {label}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
           <div className="text-xs text-[#737373] mt-2" role="note">
-            Select one or both options. Multiple selections will find courses matching any selected option.
+            Select one or more options. Multiple selections will find courses matching any selected option.
           </div>
         </fieldset>
       </div>
@@ -196,14 +307,10 @@ export default function FilterSidebar({
               <label htmlFor="filter-time-start" className="block text-xs text-[#737373] mb-1.5">
                 Start
               </label>
-              <input
+              <TimeInput
                 id="filter-time-start"
-                type="time"
-                className="w-full rounded-md border border-[#D4D4D4] px-2 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
-                value={minToTimeInput(filters.timeStart)}
-                onChange={(e) =>
-                  setFilters({ ...filters, timeStart: timeInputToMin(e.target.value) })
-                }
+                value={filters.timeStart}
+                onChange={(value) => setFilters({ ...filters, timeStart: value })}
                 aria-label="Start time"
               />
             </div>
@@ -211,20 +318,16 @@ export default function FilterSidebar({
               <label htmlFor="filter-time-end" className="block text-xs text-[#737373] mb-1.5">
                 End
               </label>
-              <input
+              <TimeInput
                 id="filter-time-end"
-                type="time"
-                className="w-full rounded-md border border-[#D4D4D4] px-2 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
-                value={minToTimeInput(filters.timeEnd)}
-                onChange={(e) =>
-                  setFilters({ ...filters, timeEnd: timeInputToMin(e.target.value) })
-                }
+                value={filters.timeEnd}
+                onChange={(value) => setFilters({ ...filters, timeEnd: value })}
                 aria-label="End time"
               />
             </div>
           </div>
           <div className="text-xs text-[#737373] mt-2" role="note">
-            Set only start or end if you only care about "not before" / "not after".
+            Enter time as "945" for 9:45, "1345" for 1:45 PM, or "9:45am". Set only start or end if you only care about "not before" / "not after".
           </div>
         </fieldset>
       </div>

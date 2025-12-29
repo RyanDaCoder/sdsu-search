@@ -23,16 +23,22 @@ function buildDaysWhere(days: string) {
   // Single letter = contains match (e.g., "M" matches "M", "MWF", "MW", etc.)
   if (normalized.length === 1) {
     return {
-      days: { contains: normalized },
+      days: { 
+        not: null,
+        contains: normalized 
+      },
     };
   }
 
   // Multiple letters = contains all selected days (e.g., "MWF" matches meetings with M AND W AND F)
   const letters = normalized.split("");
   return {
-    AND: letters.map((d) => ({
-      days: { contains: d },
-    })),
+    AND: [
+      { days: { not: null } },
+      ...letters.map((d) => ({
+        days: { contains: d },
+      })),
+    ],
   };
 }
 
@@ -57,7 +63,8 @@ export async function GET(req: Request) {
   const timeStart = parseIntOrNull(searchParams.get("timeStart")); // minutes
   const timeEnd = parseIntOrNull(searchParams.get("timeEnd")); // minutes
 
-  const instructor = (searchParams.get("instructor") ?? "").trim();
+  const instructorRaw = searchParams.get("instructor");
+  const instructor = instructorRaw ? instructorRaw.trim() : null;
 
   // GE filter: parse multiple ?ge=GE-IIB&ge=GE-IVC params
   const geCodes = searchParams.getAll("ge").filter(Boolean).map((g) => g.trim());
@@ -210,9 +217,12 @@ export async function GET(req: Request) {
         
         // Filter sections by open seats
         const filteredSections = courseData.sections.filter((section) => {
+          // Only include sections where we have both capacity and enrolled data
+          // and there are open seats (capacity > enrolled)
           if (section.capacity != null && section.enrolled != null) {
             return section.capacity > section.enrolled;
           }
+          // If capacity or enrolled is null, exclude the section when openSeatsOnly is true
           return false;
         });
         

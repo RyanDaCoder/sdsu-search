@@ -1,5 +1,17 @@
-// Day filter options - only MWF and TR (R = Thursday)
-export type DaysKey = "MWF" | "TR";
+// Day filter options for Grossmont
+// Common day combinations: M=Monday, T=Tuesday, W=Wednesday, R=Thursday, F=Friday, S=Saturday, U=Sunday
+export type DaysKey = 
+  | "M"      // Monday only
+  | "T"      // Tuesday only
+  | "W"      // Wednesday only
+  | "R"      // Thursday only
+  | "F"      // Friday only
+  | "MW"     // Monday/Wednesday
+  | "TR"     // Tuesday/Thursday
+  | "MWF"    // Monday/Wednesday/Friday
+  | "TWR"    // Tuesday/Wednesday/Thursday
+  | "MTWR"   // Monday/Tuesday/Wednesday/Thursday
+  | "MTWRF"; // Monday through Friday
 
 export type SearchFilters = {
   term?: string;
