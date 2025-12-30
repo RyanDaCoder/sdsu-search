@@ -172,40 +172,12 @@ export default function FilterSidebar({
       )}
       {!onClose && <h2 className="font-semibold text-lg text-[#2C2C2C] mb-6">Filters</h2>}
 
-      {/* Term */}
-      <div className="mb-5">
-        <label htmlFor="filter-term" className="block text-sm font-medium text-[#404040] mb-1.5">
-          Term code
-        </label>
-        <input
-          id="filter-term"
-          type="text"
-          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
-          placeholder="e.g. GROSSMONT_2026SP"
-          value={filters.term ?? "GROSSMONT_2026SP"}
-          onChange={(e) => setFilters({ ...filters, term: e.target.value || "GROSSMONT_2026SP" })}
-          aria-describedby="term-help"
-        />
-        <div id="term-help" className="text-xs text-[#737373] mt-1.5">Default: GROSSMONT_2026SP (Spring 2026)</div>
-      </div>
-
-      {/* Keyword (q) */}
-      <div className="mb-5">
-        <label htmlFor="filter-keyword" className="block text-sm font-medium text-[#404040] mb-1.5">
-          Keyword
-        </label>
-        <input
-          id="filter-keyword"
-          ref={keywordInputRef}
-          type="search"
-          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
-          placeholder='e.g. "algorithms", "writing", "film"'
-          value={filters.q ?? ""}
-          onChange={(e) => setFilters({ ...filters, q: e.target.value || undefined })}
-          aria-describedby="keyword-hint"
-        />
-        <div id="keyword-hint" className="sr-only">Press "/" to focus this field</div>
-      </div>
+      {/* Term - Hidden, always Grossmont */}
+      <input
+        type="hidden"
+        value={filters.term ?? "GROSSMONT_2026SP"}
+        onChange={() => {}}
+      />
 
       {/* Subject */}
       <div className="mb-5">
@@ -237,6 +209,24 @@ export default function FilterSidebar({
           value={filters.number ?? ""}
           onChange={(e) => setFilters({ ...filters, number: e.target.value || undefined })}
         />
+      </div>
+
+      {/* Keyword (q) */}
+      <div className="mb-5">
+        <label htmlFor="filter-keyword" className="block text-sm font-medium text-[#404040] mb-1.5">
+          Keyword
+        </label>
+        <input
+          id="filter-keyword"
+          ref={keywordInputRef}
+          type="search"
+          className="w-full rounded-md border border-[#D4D4D4] px-3 py-2.5 sm:py-2 text-sm text-[#171717] bg-white focus:border-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:outline-none transition-colors touch-manipulation"
+          placeholder='e.g. "algorithms", "writing", "film"'
+          value={filters.q ?? ""}
+          onChange={(e) => setFilters({ ...filters, q: e.target.value || undefined })}
+          aria-describedby="keyword-hint"
+        />
+        <div id="keyword-hint" className="sr-only">Press "/" to focus this field</div>
       </div>
 
       {/* Days */}
@@ -332,10 +322,10 @@ export default function FilterSidebar({
         </fieldset>
       </div>
 
-      {/* Modality */}
+      {/* Format */}
       <div className="mb-5">
         <label htmlFor="filter-modality" className="block text-sm font-medium text-[#404040] mb-1.5">
-          Modality
+          Format
         </label>
         <select
           id="filter-modality"
@@ -348,7 +338,6 @@ export default function FilterSidebar({
           <option value="ONLINE_SYNC">Online (sync)</option>
           <option value="ONLINE_ASYNC">Online (async)</option>
           <option value="HYBRID">Hybrid</option>
-          <option value="UNKNOWN">Unknown</option>
         </select>
       </div>
 
@@ -367,27 +356,6 @@ export default function FilterSidebar({
         />
       </div>
 
-      {/* Open Seats Only */}
-      <div className="mb-5">
-        <fieldset>
-          <legend className="text-sm font-medium text-[#404040] mb-2">Availability</legend>
-          <label className="flex items-center gap-2 cursor-pointer group text-sm">
-            <input
-              type="checkbox"
-              className="w-5 h-5 sm:w-4 sm:h-4 rounded border-[#D4D4D4] text-[#00685E] focus:ring-2 focus:ring-[#00685E]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
-              checked={filters.openSeatsOnly ?? false}
-              onChange={(e) => setFilters({ ...filters, openSeatsOnly: e.target.checked || undefined })}
-              aria-label="Show only sections with open seats"
-            />
-            <span className="text-[#171717] group-hover:text-[#00685E] transition-colors">
-              Show only sections with open seats
-            </span>
-          </label>
-          <div className="text-xs text-[#737373] mt-2" role="note">
-            Only show sections where capacity - enrolled &gt; 0
-          </div>
-        </fieldset>
-      </div>
 
       {/* GE / Requirements */}
       <div className="mb-5">

@@ -23,7 +23,7 @@ export default function Page() {
           <div className="h-px w-12 bg-[#00685E]"></div>
         </div>
         <p className="text-sm text-[#525252] max-w-2xl mx-auto leading-relaxed">
-          Search courses and filter sections by subject, days, time, modality, and instructor. Build your schedule and plan your semester.
+          Search courses and filter sections by subject, days, time, format, and instructor. Build your schedule and plan your semester.
         </p>
       </div>
 

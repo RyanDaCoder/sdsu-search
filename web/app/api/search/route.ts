@@ -222,7 +222,9 @@ export async function GET(req: Request) {
           if (section.capacity != null && section.enrolled != null) {
             return section.capacity > section.enrolled;
           }
-          // If capacity or enrolled is null, exclude the section when openSeatsOnly is true
+          // If capacity or enrolled is null, we can't determine if there are open seats
+          // So exclude the section when openSeatsOnly is true
+          // This is correct behavior - we only want sections we KNOW have open seats
           return false;
         });
         

@@ -89,16 +89,8 @@ export default function ActiveFilters({ filters, setFilters }: ActiveFiltersProp
     });
   }
 
-  // Open seats only
-  if (filters.openSeatsOnly) {
-    activeFilters.push({
-      id: "openSeatsOnly",
-      label: "Open seats only",
-      onRemove: () => setFilters({ ...filters, openSeatsOnly: undefined }),
-    });
-  }
 
-  // Modality
+  // Format
   if (filters.modality) {
     const modalityLabels: Record<string, string> = {
       IN_PERSON: "In-person",
@@ -109,7 +101,7 @@ export default function ActiveFilters({ filters, setFilters }: ActiveFiltersProp
     };
     activeFilters.push({
       id: "modality",
-      label: `Modality: ${modalityLabels[filters.modality] || filters.modality}`,
+      label: `Format: ${modalityLabels[filters.modality] || filters.modality}`,
       onRemove: () => setFilters({ ...filters, modality: undefined }),
     });
   }

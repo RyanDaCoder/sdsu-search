@@ -75,9 +75,9 @@ function CourseCard({ course }: { course: SearchCourse }) {
               <div key={s.id} className="rounded-md border border-[#E5E5E5] bg-[#F9F9F9] p-4">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="text-sm font-semibold text-[#2C2C2C]">
-                    Section {s.sectionCode ?? "?"}
+                    {s.classNumber ? `Class #${s.classNumber}` : s.sectionCode ? `Section ${s.sectionCode}` : "Section"}
                     <span className="text-[#737373] font-normal ml-1.5">
-                      · {s.modality ?? "UNKNOWN"} · {s.status ?? "UNKNOWN"}
+                      · {s.modality === "IN_PERSON" ? "In-person" : s.modality === "ONLINE_SYNC" ? "Online (sync)" : s.modality === "ONLINE_ASYNC" ? "Online (async)" : s.modality === "HYBRID" ? "Hybrid" : s.modality ?? "Unknown"} · {s.status ?? "Unknown"}
                     </span>
                   </div>
 

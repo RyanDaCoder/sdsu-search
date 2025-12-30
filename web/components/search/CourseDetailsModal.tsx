@@ -162,18 +162,18 @@ export default function CourseDetailsModal({ course, isOpen, onClose }: CourseDe
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-[#2C2C2C]">
-                            Section {section.sectionCode ?? "?"}
+                            {section.classNumber ? `Class #${section.classNumber}` : section.sectionCode ? `Section ${section.sectionCode}` : "Section"}
                           </span>
-                          {section.classNumber && (
+                          {section.sectionCode && section.classNumber && (
                             <span className="text-xs text-[#737373] bg-[#F0F0F0] px-2 py-0.5 rounded">
-                              Class #{section.classNumber}
+                              Section {section.sectionCode}
                             </span>
                           )}
                           <span className={`text-xs font-medium px-2 py-0.5 rounded border ${getStatusColor()}`}>
-                            {section.status ?? "UNKNOWN"}
+                            {section.status ?? "Unknown"}
                           </span>
                           <span className="text-xs text-[#737373] bg-[#F0F0F0] px-2 py-0.5 rounded">
-                            {section.modality ?? "UNKNOWN"}
+                            {section.modality === "IN_PERSON" ? "In-person" : section.modality === "ONLINE_SYNC" ? "Online (sync)" : section.modality === "ONLINE_ASYNC" ? "Online (async)" : section.modality === "HYBRID" ? "Hybrid" : section.modality ?? "Unknown"}
                           </span>
                         </div>
                       </div>
