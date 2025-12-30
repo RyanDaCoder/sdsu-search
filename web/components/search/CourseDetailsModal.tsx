@@ -140,12 +140,15 @@ export default function CourseDetailsModal({ course, isOpen, onClose }: CourseDe
             <div className="space-y-3">
               {course.sections.map((section) => {
                 // Calculate enrollment status
-                const hasEnrollmentData = section.capacity != null && section.enrolled != null;
-                const available = hasEnrollmentData ? section.capacity - section.enrolled : null;
-                const isFull = hasEnrollmentData && available !== null && available <= 0;
+                const capacity = section.capacity ?? null;
+                const enrolled = section.enrolled ?? null;
+                
+                const hasEnrollmentData = capacity !== null && enrolled !== null;
+                const available = hasEnrollmentData ? capacity - enrolled : null;
+                const isFull = available !== null && available <= 0;
                 const isWaitlist = section.status === "WAITLIST" || (hasEnrollmentData && available !== null && available <= 0 && (section.waitlist ?? 0) > 0);
-                const enrollmentPercent = hasEnrollmentData && section.capacity > 0 
-                  ? Math.round((section.enrolled! / section.capacity) * 100) 
+                const enrollmentPercent = hasEnrollmentData && capacity > 0 
+                  ? Math.round((enrolled / capacity) * 100) 
                   : null;
 
                 // Status badge color
