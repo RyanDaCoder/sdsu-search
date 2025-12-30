@@ -1,11 +1,8 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { PrismaClient, Modality } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter });
+import { Modality } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 function parseIntOrNull(v: string | null) {
   if (!v) return null;
