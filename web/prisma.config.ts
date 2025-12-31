@@ -8,7 +8,6 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    // Prefer DIRECT_URL for migrate/admin; fall back to DATABASE_URL
-    url: env("DIRECT_URL") ?? env("DATABASE_URL"),
+    url: env("DATABASE_URL"),
   },
 });
