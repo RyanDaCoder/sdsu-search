@@ -16,8 +16,8 @@ function makePrismaClient() {
     globalForPrisma.pgPool ??
     new Pool({
       connectionString: url,
-      // optional: keep small for serverless
-      max: 5,
+      max: 1,
+      ssl: { rejectUnauthorized: false },
     });
 
   if (process.env.NODE_ENV !== "production") globalForPrisma.pgPool = pool;
