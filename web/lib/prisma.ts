@@ -9,6 +9,9 @@ export const prisma =
     adapter: new PrismaPg({
       connectionString: process.env.DATABASE_URL!,
     }),
+    datasources: {
+      db: { url: process.env.DATABASE_URL },
+    },
     log: ["error"],
   });
 
