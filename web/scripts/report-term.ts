@@ -1,17 +1,10 @@
 #!/usr/bin/env node
 
-import { PrismaClient, Modality, SectionStatus } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { Modality, SectionStatus } from "@prisma/client";
 import { config } from "dotenv";
+import { prisma } from "../lib/prisma";
 
 config({ path: ".env" });
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL missing in web/.env");
-}
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const args = process.argv.slice(2);

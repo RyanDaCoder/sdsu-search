@@ -2,9 +2,8 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { config } from "dotenv";
+import { prisma } from "../lib/prisma";
 import { parseRequirementCsv } from "../lib/import/adapters/genericCsv";
 import { normalizeRequirementRow } from "../lib/import/normalize";
 import { validateRequirementRows } from "../lib/import/validate";
@@ -12,13 +11,6 @@ import { writeImportLog } from "../lib/import/logging";
 import type { RequirementMappingConfig } from "../lib/import/types";
 
 config({ path: ".env" });
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL missing in web/.env");
-}
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const args = process.argv.slice(2);

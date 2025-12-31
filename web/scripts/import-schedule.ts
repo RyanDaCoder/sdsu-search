@@ -2,9 +2,9 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { PrismaClient, Modality, SectionStatus } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { Modality, SectionStatus } from "@prisma/client";
 import { config } from "dotenv";
+import { prisma } from "../lib/prisma";
 import { parseScheduleCsv } from "../lib/import/adapters/genericCsv";
 import { normalizeScheduleRow } from "../lib/import/normalize";
 import { validateScheduleRows } from "../lib/import/validate";
@@ -12,13 +12,6 @@ import { writeImportLog } from "../lib/import/logging";
 import type { ScheduleMappingConfig } from "../lib/import/types";
 
 config({ path: ".env" });
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL missing in web/.env");
-}
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const args = process.argv.slice(2);

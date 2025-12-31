@@ -17,20 +17,13 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { PrismaClient, Modality } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { Modality } from "@prisma/client";
 import { config } from "dotenv";
+import { prisma } from "../lib/prisma";
 import { normalizeDays, parseTimeToMinutes, normalizeModality } from "../lib/import/normalize";
 import type { ScheduleRow } from "../lib/import/types";
 
 config({ path: ".env" });
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL missing in web/.env");
-}
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
 
 const TERM_CODE = "GROSSMONT_2026SP";
 const TERM_NAME = "Grossmont Spring 2026";
